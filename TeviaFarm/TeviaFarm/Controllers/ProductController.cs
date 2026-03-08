@@ -15,6 +15,8 @@ namespace TeviaFarm.Controllers
 
         public async Task<IActionResult> Index(string? search)
         {
+            search = search?.Trim();
+
             var query = _context.Products.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -28,13 +30,18 @@ namespace TeviaFarm.Controllers
 
         public async Task<IActionResult> Details(int id)
         {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
             var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound();
             }
+
             return View(product);
         }
     }
 }
-

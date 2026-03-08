@@ -1,0 +1,45 @@
+﻿@model TeviaFarm.Models.CourseOrder
+@{
+    ViewData["Title"] = "Thanh toán khóa học thành công";
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="alert alert-success">
+    <h2 class="mb-2">Thanh toán khóa học thành công</h2>
+    <p class="mb-0">Bạn đã thanh toán thành công và được cấp quyền học.</p>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header">
+        <strong>Thông tin đơn mua khóa học</strong>
+    </div>
+    <div class="card-body">
+        <p><strong>Mã đơn:</strong> @Model.CourseOrderId</p>
+        <p><strong>Trạng thái:</strong> @Model.Status</p>
+        <p><strong>Phương thức thanh toán:</strong> @Model.PaymentMethod</p>
+        <p><strong>Ngày tạo:</strong> @Model.CreatedDate</p>
+        <p class="mb-0"><strong>Tổng tiền:</strong> @Model.TotalAmount.ToString("N0", culture) đ</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header">
+        <strong>Khóa học đã mua</strong>
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            @foreach (var item in Model.CourseOrderDetails)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@item.Course?.Title</span>
+                    <span>@item.Price.ToString("N0", culture) đ</span>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <a asp-controller="Course" asp-action="MyCourses" class="btn btn-success">Vào khóa học của tôi</a>
+    <a asp-action="History" class="btn btn-outline-secondary">Lịch sử mua khóa học</a>
+</div>

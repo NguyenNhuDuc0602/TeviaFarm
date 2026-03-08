@@ -5,13 +5,44 @@
 
 <h2>Khóa học của tôi</h2>
 
-<ul class="list-group">
-    @foreach (var c in Model)
-    {
-        <li class="list-group-item">
-            <h5>@c.Title</h5>
-            <p>@c.Description</p>
-        </li>
-    }
-</ul>
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">
+        Bạn chưa đăng ký khóa học nào.
+    </div>
 
+    <a asp-controller="Course" asp-action="Index" class="btn btn-primary">
+        Xem danh sách khóa học
+    </a>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var c in Model)
+        {
+            <li class="list-group-item">
+                <h5>@c.Title</h5>
+                <p>@c.Description</p>
+
+                @if (c.Lessons != null && c.Lessons.Any())
+                {
+                    <div class="mt-2">
+                        <strong>Bài học:</strong>
+                        <ul class="mt-2">
+                            @foreach (var lesson in c.Lessons)
+                            {
+                                <li>
+                                    <a asp-controller="Course"
+                                       asp-action="Lesson"
+                                       asp-route-id="@lesson.LessonId">
+                                        @lesson.Title
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </li>
+        }
+    </ul>
+}

@@ -1,12 +1,38 @@
 @model TeviaFarm.Models.Course
 @{
     ViewData["Title"] = "Chi tiết khóa học";
-    var username = Context.Session.GetString("Username");
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+    var isAdmin = User.IsInRole("Admin");
+    var isOwned = ViewBag.IsOwned != null && (bool)ViewBag.IsOwned;
 }
 
 <h2>@Model.Title</h2>
 <p>@Model.Description</p>
 <p class="fw-bold text-success">@Model.Price.ToString("N0") đ</p>
+
+@if (isLoggedIn)
+{
+    @if (isOwned || isAdmin)
+    {
+        <div class="mb-3">
+            <button type="button" class="btn btn-secondary" disabled>Đã mua</button>
+        </div>
+    }
+    else
+    {
+        <form asp-controller="CourseOrder" asp-action="Buy" method="post" class="mb-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="courseId" value="@Model.CourseId" />
+            <button type="submit" class="btn btn-success">Mua khóa học</button>
+        </form>
+    }
+}
+else
+{
+    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary mb-3">
+        Đăng nhập để mua khóa học
+    </a>
+}
 
 <h4>Bài học</h4>
 <ul class="list-group mb-3">
@@ -14,17 +40,30 @@
     {
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <span>@l.Title</span>
+
             @if (!string.IsNullOrEmpty(l.VideoUrl))
             {
-                if (!string.IsNullOrEmpty(username))
+                @if (isLoggedIn)
                 {
-                    <a asp-controller="Course" asp-action="Lesson" asp-route-id="@l.LessonId" class="btn btn-sm btn-outline-primary">
-                        Xem bài học
-                    </a>
+                    @if (isOwned || isAdmin)
+                    {
+                        <a asp-controller="Course"
+                           asp-action="Lesson"
+                           asp-route-id="@l.LessonId"
+                           class="btn btn-sm btn-outline-primary">
+                            Xem bài học
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">Mua khóa học để xem</span>
+                    }
                 }
                 else
                 {
-                    <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-outline-primary">
+                    <a asp-controller="Account"
+                       asp-action="Login"
+                       class="btn btn-sm btn-outline-primary">
                         Đăng nhập để xem
                     </a>
                 }
@@ -33,5 +72,7 @@
     }
 </ul>
 
-<a asp-controller="Course" asp-action="MyCourses" class="btn btn-success">Khóa học của tôi</a>
-
+<div class="d-flex gap-2">
+    <a asp-controller="Course" asp-action="MyCourses" class="btn btn-secondary">Khóa học của tôi</a>
+    <a asp-controller="CourseOrder" asp-action="History" class="btn btn-outline-secondary">Lịch sử mua khóa học</a>
+</div>

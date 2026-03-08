@@ -1,0 +1,65 @@
+﻿@model IEnumerable<TeviaFarm.Models.CourseOrder>
+@{
+    ViewData["Title"] = "Lịch sử mua khóa học";
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+
+    string GetStatusText(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ thanh toán",
+            "Paid" => "Đã thanh toán",
+            "Cancelled" => "Đã hủy",
+            _ => status ?? ""
+        };
+    }
+}
+
+<h2>Lịch sử mua khóa học</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">
+        Bạn chưa có đơn mua khóa học nào.
+    </div>
+
+    <a asp-controller="Course" asp-action="Index" class="btn btn-primary">Xem danh sách khóa học</a>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày tạo</th>
+                    <th>Trạng thái</th>
+                    <th>Tổng tiền</th>
+                    <th>Khóa học</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+            <tr>
+                <td>@order.CourseOrderId</td>
+                <td>@order.CreatedDate</td>
+                <td>@GetStatusText(order.Status)</td>
+                <td>@order.TotalAmount.ToString("N0", culture) đ</td>
+                <td>
+                    @string.Join(", ", order.CourseOrderDetails
+                                        .Where(x => x.Course != null)
+                                        .Select(x => x.Course!.Title))
+                </td>
+                <td class="text-end">
+                    <a asp-action="Details" asp-route-id="@order.CourseOrderId" class="btn btn-sm btn-outline-primary">
+                        Xem chi tiết
+                    </a>
+                </td>
+            </tr>
+                        }
+            </tbody>
+        </table>
+    </div>
+}

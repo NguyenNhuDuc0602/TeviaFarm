@@ -1,7 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using TeviaFarm.Data;
-using System.Globalization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using TeviaFarm.Data;
+using TeviaFarm.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,19 +14,40 @@ builder.Services.AddControllersWithViews();
 // Session needs a cache store
 builder.Services.AddDistributedMemoryCache();
 
-// Configure EF Core DbContext (update connection string as needed)
+// Configure EF Core DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Simple session-based auth support
-builder.Services.AddSession();
+// Session chỉ giữ dữ liệu phụ
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Cookie Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+
+// ===== HẾT ĐOẠN CHẠY 1 LẦN =====
 
 // Force Vietnamese culture for number/currency formatting
 var viCulture = new CultureInfo("vi-VN");
 CultureInfo.DefaultThreadCurrentCulture = viCulture;
 CultureInfo.DefaultThreadCurrentUICulture = viCulture;
+
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture(viCulture),
@@ -45,6 +69,7 @@ app.UseRouting();
 
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -56,4 +81,3 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 await app.RunAsync();
-

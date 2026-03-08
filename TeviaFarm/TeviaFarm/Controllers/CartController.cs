@@ -1,9 +1,12 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
 
 namespace TeviaFarm.Controllers
 {
+    [Authorize]
     public class CartController : Controller
     {
         private readonly AppDbContext _context;
@@ -13,66 +16,88 @@ namespace TeviaFarm.Controllers
             _context = context;
         }
 
-        private bool IsLoggedIn()
+        private int? GetCurrentUserId()
         {
-            return HttpContext.Session.GetInt32("UserId") != null;
-        }
-
-        private int GetOrCreateCartId()
-        {
-            const string key = "CartId";
-            if (HttpContext.Session.GetInt32(key) is int existingId)
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
             {
-                return existingId;
+                return null;
             }
 
-            var userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            return int.Parse(userIdClaim);
+        }
 
-            var cart = new Models.Cart
+        private async Task<Models.Cart> GetOrCreateCartAsync(int userId)
+        {
+            var cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (cart != null)
+            {
+                return cart;
+            }
+
+            cart = new Models.Cart
             {
                 UserId = userId
             };
-            _context.Carts.Add(cart);
-            _context.SaveChanges();
 
-            HttpContext.Session.SetInt32(key, cart.CartId);
-            return cart.CartId;
+            _context.Carts.Add(cart);
+            await _context.SaveChangesAsync();
+
+            return cart;
         }
 
         public async Task<IActionResult> Index()
         {
-            if (!IsLoggedIn())
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var cartId = GetOrCreateCartId();
-            var cart = await _context.Carts
-                .Include(c => c.Items)
-                .ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(c => c.CartId == cartId);
-
+            var cart = await GetOrCreateCartAsync(userId.Value);
             return View(cart);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(int productId, int quantity = 1)
         {
-            if (!IsLoggedIn())
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var cartId = GetOrCreateCartId();
+            if (productId <= 0)
+            {
+                return NotFound();
+            }
+
+            if (quantity <= 0 || quantity > 1000)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            var cart = await GetOrCreateCartAsync(userId.Value);
 
             var item = await _context.CartItems
-                .FirstOrDefaultAsync(i => i.CartId == cartId && i.ProductId == productId);
+                .FirstOrDefaultAsync(i => i.CartId == cart.CartId && i.ProductId == productId);
 
             if (item == null)
             {
                 item = new Models.CartItem
                 {
-                    CartId = cartId,
+                    CartId = cart.CartId,
                     ProductId = productId,
                     Quantity = quantity
                 };
@@ -88,46 +113,89 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(int cartItemId, int quantity)
         {
-            if (!IsLoggedIn())
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var item = await _context.CartItems.FindAsync(cartItemId);
-            if (item != null)
+            if (cartItemId <= 0)
             {
-                if (quantity <= 0)
-                {
-                    _context.CartItems.Remove(item);
-                }
-                else
-                {
-                    item.Quantity = quantity;
-                }
-                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
             }
 
+            if (quantity < 0 || quantity > 1000)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var cart = await _context.Carts
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+
+            if (cart == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var item = await _context.CartItems
+                .FirstOrDefaultAsync(i => i.CartItemId == cartItemId && i.CartId == cart.CartId);
+
+            if (item == null)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            if (quantity == 0)
+            {
+                _context.CartItems.Remove(item);
+            }
+            else
+            {
+                item.Quantity = quantity;
+            }
+
+            await _context.SaveChangesAsync();
             return RedirectToAction("Index");
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Remove(int cartItemId)
         {
-            if (!IsLoggedIn())
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var item = await _context.CartItems.FindAsync(cartItemId);
-            if (item != null)
+            if (cartItemId <= 0)
             {
-                _context.CartItems.Remove(item);
-                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
             }
+
+            var cart = await _context.Carts
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+
+            if (cart == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var item = await _context.CartItems
+                .FirstOrDefaultAsync(i => i.CartItemId == cartItemId && i.CartId == cart.CartId);
+
+            if (item == null)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            _context.CartItems.Remove(item);
+            await _context.SaveChangesAsync();
+
             return RedirectToAction("Index");
         }
     }
 }
-

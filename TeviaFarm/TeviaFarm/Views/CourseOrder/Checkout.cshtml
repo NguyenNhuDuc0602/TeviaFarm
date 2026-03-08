@@ -1,50 +1,38 @@
-@model TeviaFarm.Models.Cart
+﻿@model TeviaFarm.Models.CourseOrder
 @{
-    ViewData["Title"] = "Thanh toán";
-    var orderTotal = Model.Items.Sum(i => (i.Product?.Price ?? 0) * i.Quantity);
+    ViewData["Title"] = "Thanh toán khóa học";
     var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
 }
 
-<h2>Thanh toán</h2>
+<h2>Thanh toán khóa học</h2>
 
 <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
 <div class="row">
     <div class="col-lg-8">
-        <h4>Tóm tắt đơn hàng</h4>
+        <h4>Khóa học trong đơn</h4>
+
         <table class="table">
             <thead>
                 <tr>
-                    <th>Sản phẩm</th>
-                    <th>Số lượng</th>
-                    <th>Thành tiền</th>
+                    <th>Khóa học</th>
+                    <th>Giá</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model.Items)
+                @foreach (var item in Model.CourseOrderDetails)
                 {
-                    var lineTotal = (item.Product?.Price ?? 0) * item.Quantity;
                     <tr>
-                        <td>@item.Product?.ProductName</td>
-                        <td>@item.Quantity</td>
-                        <td>@lineTotal.ToString("N0", culture) đ</td>
+                        <td>@item.Course?.Title</td>
+                        <td>@item.Price.ToString("N0", culture) đ</td>
                     </tr>
                 }
             </tbody>
         </table>
 
-        <h4>Thông tin giao hàng</h4>
         <form asp-action="Checkout" method="post">
             @Html.AntiForgeryToken()
-
-            <div class="mb-3">
-                <label class="form-label">Địa chỉ giao hàng</label>
-                <textarea name="shippingAddress"
-                          class="form-control"
-                          required
-                          maxlength="255"
-                          placeholder="Nhập địa chỉ nhận hàng chi tiết..."></textarea>
-            </div>
+            <input type="hidden" name="id" value="@Model.CourseOrderId" />
 
             <div class="mb-3">
                 <label class="form-label">Phương thức thanh toán</label>
@@ -73,18 +61,20 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg">Xác nhận đặt hàng</button>
+            <button type="submit" class="btn btn-success btn-lg">Xác nhận thanh toán</button>
+            <a asp-action="History" class="btn btn-link">Lịch sử mua khóa học</a>
         </form>
     </div>
 
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-header bg-success text-white">
-                <strong>Tổng đơn hàng</strong>
+                <strong>Tổng thanh toán</strong>
             </div>
             <div class="card-body">
-                <p class="mb-2">Tạm tính: <strong>@orderTotal.ToString("N0", culture) đ</strong></p>
-                <p class="text-muted small mb-0">Miễn phí vận chuyển cho đơn trên 300.000 đ</p>
+                <p class="mb-0">
+                    <strong>@Model.TotalAmount.ToString("N0", culture) đ</strong>
+                </p>
             </div>
         </div>
     </div>

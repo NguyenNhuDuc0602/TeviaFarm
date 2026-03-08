@@ -21,29 +21,34 @@
             </tr>
         </thead>
         <tbody>
-        @foreach (var p in Model)
-        {
-            <tr>
-                <td>@p.ProductId</td>
-                <td class="fw-semibold">@p.ProductName</td>
-                <td>@p.Price.ToString("N0") đ/kg</td>
-                <td>@p.Stock</td>
-                <td>
-                    @if (!string.IsNullOrEmpty(p.ImageUrl))
-                    {
-                        <img src="@Url.Content(p.ImageUrl)" alt="@p.ProductName" style="width:80px;height:50px;object-fit:cover;border-radius:6px;" />
-                    }
-                </td>
-                <td class="text-end">
-                    <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn btn-sm btn-outline-primary">Sửa</a>
-                    <form asp-action="DeleteProduct" method="post" class="d-inline">
-                        <input type="hidden" name="id" value="@p.ProductId" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa sản phẩm này?');">Xóa</button>
-                    </form>
-                </td>
-            </tr>
-        }
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.ProductId</td>
+                    <td class="fw-semibold">@p.ProductName</td>
+                    <td>@p.Price.ToString("N0") đ/kg</td>
+                    <td>@p.Stock</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(p.ImageUrl))
+                        {
+                            <img src="@Url.Content(p.ImageUrl)" alt="@p.ProductName" style="width:80px;height:50px;object-fit:cover;border-radius:6px;" />
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn btn-sm btn-outline-primary">Sửa</a>
+
+                        <form asp-action="DeleteProduct" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@p.ProductId" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Xóa sản phẩm này?');">
+                                Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
 </div>
-

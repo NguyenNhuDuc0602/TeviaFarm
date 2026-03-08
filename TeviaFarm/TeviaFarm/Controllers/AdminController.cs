@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
 
 namespace TeviaFarm.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
@@ -13,41 +15,26 @@ namespace TeviaFarm.Controllers
             _context = context;
         }
 
-        private bool IsAdmin()
-        {
-            var role = HttpContext.Session.GetString("Role");
-            return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
-        }
-
         public IActionResult Index()
         {
-            if (!IsAdmin())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             return View();
         }
 
-        // Product Management
         public async Task<IActionResult> Products()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
             var products = await _context.Products.ToListAsync();
             return View(products);
         }
 
         public IActionResult CreateProduct()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
             return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateProduct(Models.Product product)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             if (!ModelState.IsValid)
             {
                 return View(product);
@@ -60,18 +47,16 @@ namespace TeviaFarm.Controllers
 
         public async Task<IActionResult> EditProduct(int id)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var product = await _context.Products.FindAsync(id);
             if (product == null) return NotFound();
+
             return View(product);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProduct(Models.Product product)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             if (!ModelState.IsValid)
             {
                 return View(product);
@@ -83,10 +68,9 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var product = await _context.Products.FindAsync(id);
             if (product != null)
             {
@@ -97,11 +81,8 @@ namespace TeviaFarm.Controllers
             return RedirectToAction(nameof(Products));
         }
 
-        // Order Management
         public async Task<IActionResult> Orders()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var orders = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(d => d.Product)
@@ -112,9 +93,16 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateOrderStatus(int id, string status)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
+            status = status?.Trim() ?? "";
+
+            var allowedStatuses = new[] { "Pending", "Shipping", "Completed", "Cancelled" };
+            if (string.IsNullOrWhiteSpace(status) || !allowedStatuses.Contains(status))
+            {
+                return RedirectToAction(nameof(Orders));
+            }
 
             var order = await _context.Orders.FindAsync(id);
             if (order != null)
@@ -122,30 +110,29 @@ namespace TeviaFarm.Controllers
                 order.Status = status;
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction(nameof(Orders));
         }
 
-        // User Management
         public async Task<IActionResult> Users()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
             var users = await _context.Users.ToListAsync();
             return View(users);
         }
 
-        // Community Management
         public async Task<IActionResult> Posts()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            var posts = await _context.Posts.OrderByDescending(p => p.CreatedDate).ToListAsync();
+            var posts = await _context.Posts
+                .OrderByDescending(p => p.CreatedDate)
+                .ToListAsync();
+
             return View(posts);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApprovePost(int id)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var post = await _context.Posts.FindAsync(id);
             if (post != null)
             {
@@ -157,10 +144,9 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePost(int id)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var post = await _context.Posts.FindAsync(id);
             if (post != null)
             {
@@ -171,28 +157,24 @@ namespace TeviaFarm.Controllers
             return RedirectToAction(nameof(Posts));
         }
 
-        // Course Management
         public async Task<IActionResult> Courses()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var courses = await _context.Courses
                 .Include(c => c.Lessons)
                 .ToListAsync();
+
             return View(courses);
         }
 
         public IActionResult CreateCourse()
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
             return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCourse(Models.Course course)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             if (!ModelState.IsValid)
             {
                 return View(course);
@@ -205,8 +187,6 @@ namespace TeviaFarm.Controllers
 
         public async Task<IActionResult> CreateLesson(int courseId)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             var course = await _context.Courses.FindAsync(courseId);
             if (course == null) return NotFound();
 
@@ -215,10 +195,9 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateLesson(Models.Lesson lesson)
         {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
             if (!ModelState.IsValid)
             {
                 return View(lesson);
@@ -230,4 +209,3 @@ namespace TeviaFarm.Controllers
         }
     }
 }
-

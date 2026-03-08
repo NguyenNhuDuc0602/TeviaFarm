@@ -19,6 +19,9 @@ namespace TeviaFarm.Models
         public string Role { get; set; } = "Customer"; // Guest, Customer, Farmer, Admin
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public ICollection<UserCourse> UserCourses { get; set; } = new List<UserCourse>();
+        public ICollection<CourseOrder> CourseOrders { get; set; } = new List<CourseOrder>();
     }
 
     public class Product
@@ -136,6 +139,8 @@ namespace TeviaFarm.Models
         public decimal Price { get; set; }
 
         public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+        public ICollection<UserCourse> UserCourses { get; set; } = new List<UserCourse>();
+        public ICollection<CourseOrderDetail> CourseOrderDetails { get; set; } = new List<CourseOrderDetail>();
     }
 
     public class Lesson
@@ -150,5 +155,53 @@ namespace TeviaFarm.Models
         [StringLength(255)]
         public string? VideoUrl { get; set; }
     }
-}
 
+    public class UserCourse
+    {
+        public int UserCourseId { get; set; }
+
+        public int UserId { get; set; }
+        public User? User { get; set; }
+
+        public int CourseId { get; set; }
+        public Course? Course { get; set; }
+
+        public DateTime EnrolledDate { get; set; } = DateTime.UtcNow;
+    }
+
+    public class CourseOrder
+    {
+        public int CourseOrderId { get; set; }
+
+        public int UserId { get; set; }
+        public User? User { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal TotalAmount { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string Status { get; set; } = "Pending";
+
+        [StringLength(50)]
+        public string? PaymentMethod { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public ICollection<CourseOrderDetail> CourseOrderDetails { get; set; } = new List<CourseOrderDetail>();
+    }
+
+    public class CourseOrderDetail
+    {
+        public int CourseOrderDetailId { get; set; }
+
+        public int CourseOrderId { get; set; }
+        public CourseOrder? CourseOrder { get; set; }
+
+        public int CourseId { get; set; }
+        public Course? Course { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal Price { get; set; }
+    }
+}

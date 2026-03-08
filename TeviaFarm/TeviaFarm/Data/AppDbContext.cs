@@ -18,6 +18,9 @@ namespace TeviaFarm.Data
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Course> Courses => Set<Course>();
         public DbSet<Lesson> Lessons => Set<Lesson>();
+        public DbSet<UserCourse> UserCourses => Set<UserCourse>();
+        public DbSet<CourseOrder> CourseOrders => Set<CourseOrder>();
+        public DbSet<CourseOrderDetail> CourseOrderDetails => Set<CourseOrderDetail>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,7 +40,39 @@ namespace TeviaFarm.Data
                 .HasMany(c => c.Lessons)
                 .WithOne(l => l.Course!)
                 .HasForeignKey(l => l.CourseId);
+
+            modelBuilder.Entity<UserCourse>()
+                .HasIndex(x => new { x.UserId, x.CourseId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.User)
+                .WithMany(u => u.UserCourses)
+                .HasForeignKey(uc => uc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.Course)
+                .WithMany(c => c.UserCourses)
+                .HasForeignKey(uc => uc.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseOrder>()
+                .HasMany(o => o.CourseOrderDetails)
+                .WithOne(d => d.CourseOrder!)
+                .HasForeignKey(d => d.CourseOrderId);
+
+            modelBuilder.Entity<CourseOrder>()
+                .HasOne(o => o.User)
+                .WithMany(u => u.CourseOrders)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseOrderDetail>()
+                .HasOne(d => d.Course)
+                .WithMany(c => c.CourseOrderDetails)
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
-
