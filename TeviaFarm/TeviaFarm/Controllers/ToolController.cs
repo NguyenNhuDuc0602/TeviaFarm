@@ -1,33 +1,45 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TeviaFarm.Controllers
 {
+    [Authorize]
     public class ToolController : Controller
     {
-        private bool IsLoggedIn()
-        {
-            return HttpContext.Session.GetInt32("UserId") != null;
-        }
-
         [HttpGet]
         public IActionResult FeedCalculator()
         {
-            if (!IsLoggedIn())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult FeedCalculator(int numberOfPigs, decimal averageWeight, string growthStage)
         {
-            if (!IsLoggedIn())
+            growthStage = growthStage?.Trim() ?? "";
+
+            var allowedStages = new[] { "Starter", "Grower", "Finisher" };
+
+            if (numberOfPigs <= 0)
             {
-                return RedirectToAction("Login", "Account");
+                ModelState.AddModelError(string.Empty, "Số lượng heo phải lớn hơn 0.");
             }
-            // Simple demo formula – adjust as needed
+
+            if (averageWeight <= 0)
+            {
+                ModelState.AddModelError(string.Empty, "Khối lượng trung bình phải lớn hơn 0.");
+            }
+
+            if (string.IsNullOrWhiteSpace(growthStage) || !allowedStages.Contains(growthStage))
+            {
+                ModelState.AddModelError(string.Empty, "Giai đoạn phát triển không hợp lệ.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
             decimal baseFeedPerKg = growthStage switch
             {
                 "Starter" => 0.05m,
@@ -37,7 +49,7 @@ namespace TeviaFarm.Controllers
             };
 
             var totalFeed = numberOfPigs * averageWeight * baseFeedPerKg;
-            var greenTeaPowder = totalFeed * 0.03m; // 3% green tea
+            var greenTeaPowder = totalFeed * 0.03m;
 
             ViewBag.NumberOfPigs = numberOfPigs;
             ViewBag.AverageWeight = averageWeight;
@@ -50,4 +62,3 @@ namespace TeviaFarm.Controllers
         }
     }
 }
-

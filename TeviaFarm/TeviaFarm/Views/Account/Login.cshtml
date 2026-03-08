@@ -5,15 +5,26 @@
 <h2>Đăng nhập</h2>
 
 <form asp-action="Login" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
     <div class="mb-3">
         <label class="form-label">Tên đăng nhập</label>
         <input name="username" class="form-control" required />
     </div>
+
     <div class="mb-3">
         <label class="form-label">Mật khẩu</label>
         <input name="password" type="password" class="form-control" required />
     </div>
+
     <button type="submit" class="btn btn-success">Đăng nhập</button>
     <a asp-action="Register" class="btn btn-link">Chưa có tài khoản? Đăng ký</a>
 </form>
 
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

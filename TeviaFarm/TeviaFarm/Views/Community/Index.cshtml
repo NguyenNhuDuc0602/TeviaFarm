@@ -1,12 +1,12 @@
 @model IEnumerable<TeviaFarm.Models.Post>
 @{
     ViewData["Title"] = "Cộng đồng";
-    var username = Context.Session.GetString("Username");
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Bài viết cộng đồng</h2>
-    @if (!string.IsNullOrEmpty(username))
+    @if (isLoggedIn)
     {
         <a asp-action="Create" class="btn btn-success">Tạo bài viết</a>
     }
@@ -25,4 +25,3 @@
         </div>
     </div>
 }
-

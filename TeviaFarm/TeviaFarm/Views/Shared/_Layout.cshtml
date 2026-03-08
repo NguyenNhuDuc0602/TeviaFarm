@@ -1,6 +1,8 @@
+@using System.Security.Claims
 @{
-    var username = Context.Session.GetString("Username");
-    var role = Context.Session.GetString("Role");
+    var username = User.Identity?.Name;
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+    var isAdmin = User.IsInRole("Admin");
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -13,7 +15,6 @@
 </head>
 <body>
     <header>
-        <!-- Top bar -->
         <div class="topbar">
             <div class="container topbar-inner">
                 <div class="topbar-left">
@@ -27,7 +28,6 @@
             </div>
         </div>
 
-        <!-- Main header -->
         <div class="main-header">
             <div class="container">
                 <div class="main-header-inner">
@@ -57,7 +57,7 @@
                             Giỏ hàng
                         </a>
 
-                        @if (string.IsNullOrEmpty(username))
+                        @if (!isLoggedIn)
                         {
                             <a asp-controller="Account" asp-action="Login" class="header-action-link">Đăng nhập</a>
                             <a asp-controller="Account" asp-action="Register" class="header-register-btn">Đăng ký</a>
@@ -72,7 +72,6 @@
             </div>
         </div>
 
-        <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark main-nav">
             <div class="container">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
@@ -100,7 +99,8 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="About">Giới thiệu</a>
                         </li>
-                        @if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+
+                        @if (isAdmin)
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="Index">Quản trị</a>

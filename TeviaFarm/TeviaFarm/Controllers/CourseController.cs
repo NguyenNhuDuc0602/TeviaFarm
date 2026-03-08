@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
@@ -13,19 +15,30 @@ namespace TeviaFarm.Controllers
             _context = context;
         }
 
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return null;
+            }
+
+            return int.Parse(userIdClaim);
+        }
+
         public async Task<IActionResult> Index()
         {
             var courses = await _context.Courses.ToListAsync();
             return View(courses);
         }
 
-        private bool IsLoggedIn()
-        {
-            return HttpContext.Session.GetInt32("UserId") != null;
-        }
-
         public async Task<IActionResult> Details(int id)
         {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
             var course = await _context.Courses
                 .Include(c => c.Lessons)
                 .FirstOrDefaultAsync(c => c.CourseId == id);
@@ -35,12 +48,30 @@ namespace TeviaFarm.Controllers
                 return NotFound();
             }
 
+            bool isOwned = false;
+
+            var userId = GetCurrentUserId();
+            if (userId != null)
+            {
+                isOwned = await _context.UserCourses
+                    .AnyAsync(uc => uc.UserId == userId.Value && uc.CourseId == id);
+            }
+
+            ViewBag.IsOwned = isOwned;
+
             return View(course);
         }
 
+        [Authorize]
         public async Task<IActionResult> Lesson(int id)
         {
-            if (!IsLoggedIn())
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
@@ -54,22 +85,37 @@ namespace TeviaFarm.Controllers
                 return NotFound();
             }
 
+            var isOwned = await _context.UserCourses
+                .AnyAsync(uc => uc.UserId == userId.Value && uc.CourseId == lesson.CourseId);
+
+            if (!isOwned && !User.IsInRole("Admin"))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             return View(lesson);
         }
 
+        [Authorize]
         public async Task<IActionResult> MyCourses()
         {
-            if (!IsLoggedIn())
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            // For simplicity, list all courses as purchased
+            var courseIds = await _context.UserCourses
+                .Where(uc => uc.UserId == userId.Value)
+                .Select(uc => uc.CourseId)
+                .ToListAsync();
+
             var courses = await _context.Courses
                 .Include(c => c.Lessons)
+                .Where(c => courseIds.Contains(c.CourseId))
                 .ToListAsync();
+
             return View(courses);
         }
     }
 }
-

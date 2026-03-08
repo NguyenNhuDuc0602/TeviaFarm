@@ -1,0 +1,13 @@
+﻿@{
+    ViewData["Title"] = "Không có quyền truy cập";
+}
+
+<div class="container mt-4">
+    <div class="alert alert-danger">
+        <h2>Không có quyền truy cập</h2>
+        <p>Bạn không được phép truy cập trang này.</p>
+    </div>
+
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+    <a asp-controller="Account" asp-action="Login" class="btn btn-secondary">Đăng nhập tài khoản khác</a>
+</div>
