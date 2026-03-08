@@ -275,7 +275,7 @@ body {
 
 /* ===== FOOTER ===== */
 .site-footer {
-    margin-top: 56px;
+    margin-top: 0;
     background: linear-gradient(180deg, #0f172a, #111827);
     color: #e5e7eb;
 }
@@ -435,4 +435,19 @@ body {
     .footer-bottom-note {
         text-align: left;
     }
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+    body.app-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+main.app-main {
+    flex: 1 0 auto;
 }

@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Cộng đồng";
     var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -12,16 +15,72 @@
     }
 </div>
 
-@foreach (var p in Model)
+@if (TempData["Message"] != null)
 {
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">@p.Title</h5>
-            <p class="card-text text-truncate">@p.Content</p>
-            <small class="text-muted">@p.CreatedDate</small>
-            <div>
-                <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-link btn-sm">Xem chi tiết</a>
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Chưa có bài viết nào.
+    </div>
+}
+else
+{
+    @foreach (var p in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@p.Title</h5>
+                <p class="card-text text-truncate">@p.Content</p>
+                <small class="text-muted">
+                    @p.CreatedDate
+                    @if (p.User != null)
+                    {
+                        <span> - bởi @p.User.Username</span>
+                    }
+                </small>
+                <div class="mt-2">
+                    <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-link btn-sm">Xem chi tiết</a>
+                </div>
             </div>
         </div>
-    </div>
+    }
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@(currentPage - 1)">
+                        Trước
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-page="@i">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@(currentPage + 1)">
+                        Sau
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
 }

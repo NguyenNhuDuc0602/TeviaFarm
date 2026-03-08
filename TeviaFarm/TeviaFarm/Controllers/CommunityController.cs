@@ -27,13 +27,35 @@ namespace TeviaFarm.Controllers
             return int.Parse(userIdClaim);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var posts = await _context.Posts
+            var query = _context.Posts
                 .Include(p => p.User)
                 .Where(p => p.IsApproved)
-                .OrderByDescending(p => p.CreatedDate)
+                .OrderByDescending(p => p.CreatedDate);
+
+            const int pageSize = 5;
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+            if (totalPages > 0 && page > totalPages)
+            {
+                page = totalPages;
+            }
+
+            var posts = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(posts);
         }
