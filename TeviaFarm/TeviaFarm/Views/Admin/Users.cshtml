@@ -1,0 +1,33 @@
+@model IEnumerable<TeviaFarm.Models.User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<h2 class="mb-3">Quản lý người dùng</h2>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên đăng nhập</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Ngày tạo</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.UserId</td>
+                <td class="fw-semibold">@u.Username</td>
+                <td>@u.Email</td>
+                <td>@u.Role</td>
+                <td>@u.CreatedDate</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+

@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<h2>Đăng nhập</h2>
+
+<form asp-action="Login" method="post">
+    <div class="mb-3">
+        <label class="form-label">Tên đăng nhập</label>
+        <input name="username" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Mật khẩu</label>
+        <input name="password" type="password" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-success">Đăng nhập</button>
+    <a asp-action="Register" class="btn btn-link">Chưa có tài khoản? Đăng ký</a>
+</form>
+

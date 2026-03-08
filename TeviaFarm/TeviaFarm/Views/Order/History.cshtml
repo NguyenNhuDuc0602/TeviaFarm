@@ -1,0 +1,29 @@
+@model IEnumerable<TeviaFarm.Models.Order>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+}
+
+<h2>Lịch sử đơn hàng</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Mã đơn</th>
+            <th>Ngày đặt</th>
+            <th>Trạng thái</th>
+            <th>Tổng tiền</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var o in Model)
+    {
+        <tr>
+            <td>@o.OrderId</td>
+            <td>@o.OrderDate</td>
+            <td>@o.Status</td>
+            <td>@o.TotalAmount.ToString("N0") đ</td>
+        </tr>
+    }
+    </tbody>
+</table>
+

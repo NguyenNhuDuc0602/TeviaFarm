@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Trang chủ Tevia Farm";
+}
+
+<div class="row">
+    <!-- Cột trái: danh mục giống website thương mại -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                Danh mục sản phẩm
+            </div>
+            <div class="list-group list-group-flush">
+                <a asp-controller="Product" asp-action="Details" asp-route-id="1" class="list-group-item list-group-item-action">Thịt heo trà xanh</a>
+                <a asp-controller="Product" asp-action="Details" asp-route-id="3" class="list-group-item list-group-item-action">Sản phẩm chế biến</a>
+                <a asp-controller="Product" asp-action="Details" asp-route-id="5" class="list-group-item list-group-item-action">Bột trà xanh & lá trà xanh</a>
+                <a asp-controller="Product" asp-action="Details" asp-route-id="6" class="list-group-item list-group-item-action">Cám gạo & thức ăn phối trộn</a>
+                <a asp-controller="Course" asp-action="Index" class="list-group-item list-group-item-action">Khóa học chăn nuôi</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: banner quảng cáo + giới thiệu -->
+    <div class="col-md-9">
+        <!-- Slider quảng cáo sản phẩm -->
+        <div id="homeCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="0" class="active" aria-current="true"></button>
+                <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="2"></button>
+            </div>
+            <div class="carousel-inner rounded shadow-sm">
+                <div class="carousel-item active" data-bs-interval="5000">
+                    <div class="carousel-bg carousel-bg-1 d-flex align-items-center">
+                        <div class="p-4 text-white">
+                            <h3>Ba rọi heo trà xanh</h3>
+                            <p>Thịt heo sạch, thơm ngon từ mô hình chăn nuôi sử dụng bột trà xanh.</p>
+                            <a class="btn btn-light btn-sm" asp-controller="Product" asp-action="Index">Mua ngay</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item" data-bs-interval="5000">
+                    <div class="carousel-bg carousel-bg-2 d-flex align-items-center">
+                        <div class="p-4 text-white">
+                            <h3>Bột & lá trà xanh</h3>
+                            <p>Tối ưu khẩu phần ăn cho đàn heo với bột và lá trà xanh chất lượng.</p>
+                            <a class="btn btn-light btn-sm" asp-controller="Product" asp-action="Index">Xem sản phẩm</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item" data-bs-interval="5000">
+                    <div class="carousel-bg carousel-bg-3 d-flex align-items-center">
+                        <div class="p-4 text-white">
+                            <h3>Khóa học chăn nuôi sạch</h3>
+                            <p>Học mô hình heo trà xanh, quản lý trang trại và công thức thức ăn.</p>
+                            <a class="btn btn-light btn-sm" asp-controller="Course" asp-action="Index">Xem khóa học</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+
+        <!-- Khối giới thiệu -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-7">
+                <h1 class="display-6 fw-bold text-success">Tevia Farm</h1>
+                <p class="lead">
+                    Nền tảng chăn nuôi heo trà xanh, kết nối người tiêu dùng và nông hộ.
+                </p>
+                <ul>
+                    <li>Mua thịt heo và sản phẩm từ mô hình heo trà xanh</li>
+                    <li>Tối ưu khẩu phần với công cụ tính bột trà xanh</li>
+                    <li>Tham gia cộng đồng chia sẻ kinh nghiệm chăn nuôi</li>
+                    <li>Học chăn nuôi sạch qua các khóa học trực tuyến</li>
+                </ul>
+                <a class="btn btn-success me-2" asp-controller="Product" asp-action="Index">Mua sản phẩm</a>
+                <a class="btn btn-outline-success" asp-controller="Course" asp-action="Index">Xem khóa học</a>
+            </div>
+            <div class="col-md-5">
+                <div class="p-4 bg-light rounded-3 shadow-sm">
+                    <h4>Công cụ tính khẩu phần</h4>
+                    <p>Tính nhanh tỷ lệ bột trà xanh và cám cho đàn heo của bạn.</p>
+                    <a class="btn btn-primary" asp-controller="Tool" asp-action="FeedCalculator">Mở công cụ</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Sản phẩm nổi bật</h5>
+                        <p class="card-text">Ba rọi heo trà xanh, bột trà xanh nguyên chất, lá trà xanh phơi khô, cám gạo phối trộn...</p>
+                        <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success btn-sm">Xem tất cả sản phẩm</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Cộng đồng & khóa học</h5>
+                        <p class="card-text">Chia sẻ công thức, kinh nghiệm chăn nuôi và học mô hình heo trà xanh qua các khóa học trực tuyến.</p>
+                        <a asp-controller="Community" asp-action="Index" class="btn btn-outline-primary btn-sm me-2">Vào cộng đồng</a>
+                        <a asp-controller="Course" asp-action="Index" class="btn btn-outline-primary btn-sm">Xem khóa học</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,109 @@
+@model TeviaFarm.Models.Cart
+@{
+    ViewData["Title"] = "Giỏ hàng";
+}
+
+<h2>Giỏ hàng của bạn</h2>
+
+@if (Model == null || Model.Items == null || !Model.Items.Any())
+{
+    <p>Giỏ hàng hiện đang trống.</p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Đơn giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Items)
+        {
+            var unitPrice = item.Product?.Price ?? 0;
+            <tr data-cart-row data-unit-price="@unitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                <td>@item.Product?.ProductName</td>
+                <td>@unitPrice.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) đ</td>
+                <td>
+                    <form asp-action="Update" method="post" class="d-flex align-items-center" data-cart-form>
+                        <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                        <input type="number" name="quantity" value="@item.Quantity" min="1" class="form-control form-control-sm me-2" style="max-width:80px;" data-qty />
+                    </form>
+                </td>
+                <td><span data-line-total>@((unitPrice * item.Quantity).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))) đ</span></td>
+                <td>
+                    <form asp-action="Remove" method="post">
+                        <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between">
+        <div></div>
+        <div>
+            <strong>Tổng cộng: <span data-cart-total>@Model.Items.Sum(i => (i.Product?.Price ?? 0) * i.Quantity).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) đ</span></strong>
+        </div>
+    </div>
+
+    <div class="mt-3 text-end">
+        <a asp-controller="Order" asp-action="Checkout" class="btn btn-success">Tiến hành thanh toán</a>
+    </div>
+}
+
+@section Scripts {
+<script>
+  (function () {
+    function formatVnd(value) {
+      const n = Number(value) || 0;
+      return n.toLocaleString('vi-VN') + ' đ';
+    }
+
+    function recalc() {
+      const rows = document.querySelectorAll('[data-cart-row]');
+      let total = 0;
+
+      rows.forEach(row => {
+        const unitPrice = parseFloat(row.getAttribute('data-unit-price')) || 0;
+        const qtyInput = row.querySelector('[data-qty]');
+        const qty = Number(qtyInput?.value) || 0;
+        const line = unitPrice * qty;
+        total += line;
+
+        const lineEl = row.querySelector('[data-line-total]');
+        if (lineEl) lineEl.textContent = formatVnd(line);
+      });
+
+      const totalEl = document.querySelector('[data-cart-total]');
+      if (totalEl) totalEl.textContent = formatVnd(total);
+    }
+
+    document.addEventListener('input', function (e) {
+      if (e.target && e.target.matches('[data-qty]')) {
+        recalc();
+        const form = e.target.closest('[data-cart-form]');
+        if (form) {
+          clearTimeout(form._debounce);
+          form._debounce = setTimeout(function () { form.submit(); }, 600);
+        }
+      }
+    });
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.matches('[data-qty]')) {
+        const form = e.target.closest('[data-cart-form]');
+        if (form) form.submit();
+      }
+    });
+
+    recalc();
+  })();
+</script>
+}
+

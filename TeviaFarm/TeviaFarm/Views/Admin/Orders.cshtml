@@ -1,0 +1,46 @@
+@model IEnumerable<TeviaFarm.Models.Order>
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+}
+
+<h2 class="mb-3">Quản lý đơn hàng</h2>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Mã đơn</th>
+                <th>Ngày đặt</th>
+                <th>Trạng thái</th>
+                <th>Tổng tiền</th>
+                <th>Địa chỉ giao</th>
+                <th class="text-end">Cập nhật</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var o in Model)
+        {
+            <tr>
+                <td>@o.OrderId</td>
+                <td>@o.OrderDate</td>
+                <td>@o.Status</td>
+                <td>@o.TotalAmount.ToString("N0") đ</td>
+                <td>@o.ShippingAddress</td>
+                <td class="text-end">
+                    <form asp-action="UpdateOrderStatus" method="post" class="d-flex justify-content-end gap-2">
+                        <input type="hidden" name="id" value="@o.OrderId" />
+                        <select name="status" class="form-select form-select-sm" style="max-width: 180px;">
+                            <option value="Chờ xử lý" selected="@(o.Status == "Chờ xử lý")">Chờ xử lý</option>
+                            <option value="Đang giao" selected="@(o.Status == "Đang giao")">Đang giao</option>
+                            <option value="Hoàn tất" selected="@(o.Status == "Hoàn tất")">Hoàn tất</option>
+                            <option value="Hủy" selected="@(o.Status == "Hủy")">Hủy</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Lưu</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+

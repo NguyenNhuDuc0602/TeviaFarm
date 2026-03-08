@@ -1,0 +1,49 @@
+@model IEnumerable<TeviaFarm.Models.Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Quản lý sản phẩm</h2>
+    <a asp-action="CreateProduct" class="btn btn-success">Thêm sản phẩm</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá (đ/kg)</th>
+                <th>Tồn kho</th>
+                <th>Hình ảnh</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.ProductId</td>
+                <td class="fw-semibold">@p.ProductName</td>
+                <td>@p.Price.ToString("N0") đ/kg</td>
+                <td>@p.Stock</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(p.ImageUrl))
+                    {
+                        <img src="@Url.Content(p.ImageUrl)" alt="@p.ProductName" style="width:80px;height:50px;object-fit:cover;border-radius:6px;" />
+                    }
+                </td>
+                <td class="text-end">
+                    <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn btn-sm btn-outline-primary">Sửa</a>
+                    <form asp-action="DeleteProduct" method="post" class="d-inline">
+                        <input type="hidden" name="id" value="@p.ProductId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa sản phẩm này?');">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+

@@ -1,0 +1,39 @@
+@model TeviaFarm.Models.Product
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+}
+
+<div class="row">
+    <div class="col-md-5">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <img src="@Url.Content(Model.ImageUrl)" class="img-fluid rounded" alt="@Model.ProductName" />
+        }
+        else
+        {
+            <div class="bg-light border rounded p-5 text-center">Chưa có hình ảnh</div>
+        }
+    </div>
+    <div class="col-md-7">
+        <h2>@Model.ProductName</h2>
+        <p>@Model.Description</p>
+        <p class="fw-bold text-success fs-4">@Model.Price.ToString("N0") đ/kg</p>
+        <p>Tồn kho: @Model.Stock</p>
+
+        <form asp-controller="Cart" asp-action="Add" method="post" class="row g-2 align-items-center mt-3">
+            <input type="hidden" name="productId" value="@Model.ProductId" />
+            <div class="col-auto">
+                <label class="form-label me-2">Số lượng</label>
+            </div>
+            <div class="col-auto">
+                <input type="number" name="quantity" value="1" min="1" class="form-control" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success">Thêm vào giỏ</button>
+            </div>
+        </form>
+
+        <a asp-action="Index" class="btn btn-link mt-3">← Quay lại danh sách</a>
+    </div>
+</div>
+

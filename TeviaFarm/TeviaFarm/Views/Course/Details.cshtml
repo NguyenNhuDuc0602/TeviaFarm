@@ -1,0 +1,37 @@
+@model TeviaFarm.Models.Course
+@{
+    ViewData["Title"] = "Chi tiết khóa học";
+    var username = Context.Session.GetString("Username");
+}
+
+<h2>@Model.Title</h2>
+<p>@Model.Description</p>
+<p class="fw-bold text-success">@Model.Price.ToString("N0") đ</p>
+
+<h4>Bài học</h4>
+<ul class="list-group mb-3">
+    @foreach (var l in Model.Lessons)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>@l.Title</span>
+            @if (!string.IsNullOrEmpty(l.VideoUrl))
+            {
+                if (!string.IsNullOrEmpty(username))
+                {
+                    <a asp-controller="Course" asp-action="Lesson" asp-route-id="@l.LessonId" class="btn btn-sm btn-outline-primary">
+                        Xem bài học
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-outline-primary">
+                        Đăng nhập để xem
+                    </a>
+                }
+            }
+        </li>
+    }
+</ul>
+
+<a asp-controller="Course" asp-action="MyCourses" class="btn btn-success">Khóa học của tôi</a>
+
