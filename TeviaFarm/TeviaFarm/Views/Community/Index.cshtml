@@ -1,0 +1,28 @@
+@model IEnumerable<TeviaFarm.Models.Post>
+@{
+    ViewData["Title"] = "Cộng đồng";
+    var username = Context.Session.GetString("Username");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Bài viết cộng đồng</h2>
+    @if (!string.IsNullOrEmpty(username))
+    {
+        <a asp-action="Create" class="btn btn-success">Tạo bài viết</a>
+    }
+</div>
+
+@foreach (var p in Model)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">@p.Title</h5>
+            <p class="card-text text-truncate">@p.Content</p>
+            <small class="text-muted">@p.CreatedDate</small>
+            <div>
+                <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-link btn-sm">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+}
+

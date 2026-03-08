@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Công cụ tính khẩu phần thức ăn";
+}
+
+<h2>Công cụ tính khẩu phần thức ăn</h2>
+
+<form method="post" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label class="form-label">Số lượng heo</label>
+        <input type="number" name="numberOfPigs" value="@ViewBag.NumberOfPigs" class="form-control" required min="1" />
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Khối lượng trung bình (kg)</label>
+        <input type="number" step="0.1" name="averageWeight" value="@ViewBag.AverageWeight" class="form-control" required min="1" />
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Giai đoạn sinh trưởng</label>
+        <select name="growthStage" class="form-select">
+            <option value="Starter" selected>Heo con (Starter)</option>
+            <option value="Grower">Heo hậu bị (Grower)</option>
+            <option value="Finisher">Heo xuất chuồng (Finisher)</option>
+        </select>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-success">Tính khẩu phần</button>
+    </div>
+</form>
+
+@if (ViewBag.TotalFeed != null)
+{
+    <div class="alert alert-info">
+        <p><strong>Tổng lượng thức ăn/ngày:</strong> @ViewBag.TotalFeed kg/ngày</p>
+        <p><strong>Lượng bột trà xanh:</strong> @ViewBag.GreenTeaPowder kg/ngày</p>
+        <p><strong>Tỷ lệ trộn gợi ý:</strong> @ViewBag.MixingRatio</p>
+    </div>
+}
+

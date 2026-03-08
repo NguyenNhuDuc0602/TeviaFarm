@@ -1,0 +1,38 @@
+@model TeviaFarm.Models.Lesson
+@{
+    ViewData["Title"] = "Bài học";
+    var videoUrl = Model.VideoUrl ?? "";
+    var isMp4 = videoUrl.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">@Model.Title</h2>
+        <div class="text-muted">Khóa học: @Model.Course?.Title</div>
+    </div>
+    <a asp-controller="Course" asp-action="Details" asp-route-id="@Model.CourseId" class="btn btn-outline-secondary btn-sm">
+        ← Quay lại khóa học
+    </a>
+</div>
+
+@if (string.IsNullOrWhiteSpace(videoUrl))
+{
+    <div class="alert alert-warning">Bài học này chưa có video.</div>
+}
+else if (isMp4)
+{
+    <div class="ratio ratio-16x9 shadow-sm rounded overflow-hidden">
+        <video controls preload="metadata">
+            <source src="@videoUrl" type="video/mp4" />
+            Trình duyệt của bạn không hỗ trợ phát video.
+        </video>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        Video của bài học đang dùng liên kết ngoài.
+        <a href="@videoUrl" target="_blank">Bấm để mở video</a>.
+    </div>
+}
+

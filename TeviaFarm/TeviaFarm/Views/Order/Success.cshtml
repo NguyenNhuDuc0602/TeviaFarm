@@ -1,0 +1,39 @@
+@model TeviaFarm.Models.Order
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
+
+<h2>Đặt hàng thành công</h2>
+<p>Mã đơn hàng của bạn là <strong>@Model.OrderId</strong>.</p>
+
+<h4>Thông tin đơn hàng</h4>
+<ul>
+    <li>Trạng thái: @Model.Status</li>
+    <li>Ngày đặt: @Model.OrderDate</li>
+    <li>Địa chỉ giao hàng: @Model.ShippingAddress</li>
+    <li>Tổng tiền: @Model.TotalAmount.ToString("N0") đ</li>
+</ul>
+
+<h4>Sản phẩm trong đơn</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var d in Model.OrderDetails)
+    {
+        <tr>
+            <td>@d.Product?.ProductName</td>
+            <td>@d.Quantity</td>
+            <td>@d.Price.ToString("N0") đ</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<a asp-controller="Home" asp-action="Index" class="btn btn-success">Về trang chủ</a>
+

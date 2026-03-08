@@ -1,0 +1,67 @@
+@model TeviaFarm.Models.Cart
+@{
+    ViewData["Title"] = "Thanh toán";
+    var orderTotal = Model.Items.Sum(i => (i.Product?.Price ?? 0) * i.Quantity);
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<h2>Thanh toán</h2>
+
+<div class="row">
+    <div class="col-lg-8">
+        <h4>Tóm tắt đơn hàng</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var lineTotal = (item.Product?.Price ?? 0) * item.Quantity;
+                <tr>
+                    <td>@item.Product?.ProductName</td>
+                    <td>@item.Quantity</td>
+                    <td>@lineTotal.ToString("N0", culture) đ</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <h4>Thông tin giao hàng</h4>
+        <form asp-action="Checkout" method="post">
+            <div class="mb-3">
+                <label class="form-label">Địa chỉ giao hàng</label>
+                <textarea name="shippingAddress" class="form-control" required placeholder="Nhập địa chỉ nhận hàng chi tiết..."></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phương thức thanh toán</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="pmCod" value="COD" checked>
+                    <label class="form-check-label" for="pmCod">Thanh toán khi nhận hàng (COD)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="pmBank" value="ChuyenKhoan">
+                    <label class="form-check-label" for="pmBank">Chuyển khoản ngân hàng</label>
+                </div>
+            </div>
+            <input type="hidden" name="orderTotal" value="@orderTotal" />
+            <button type="submit" class="btn btn-success btn-lg">Xác nhận đặt hàng</button>
+        </form>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <strong>Tổng đơn hàng</strong>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Tạm tính: <strong>@orderTotal.ToString("N0", culture) đ</strong></p>
+                <p class="text-muted small mb-0">Miễn phí vận chuyển cho đơn trên 300.000 đ</p>
+            </div>
+        </div>
+    </div>
+</div>
+

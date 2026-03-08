@@ -1,0 +1,25 @@
+@model TeviaFarm.Models.Lesson
+@{
+    ViewData["Title"] = "Thêm bài học";
+}
+
+<h2>Thêm bài học</h2>
+
+<form asp-action="CreateLesson" method="post" class="row g-3">
+    <input type="hidden" asp-for="CourseId" />
+    <div class="col-md-8">
+        <label asp-for="Title" class="form-label">Tiêu đề bài học</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="VideoUrl" class="form-label">Link video (.mp4 hoặc link ngoài)</label>
+        <input asp-for="VideoUrl" class="form-control" />
+        <span asp-validation-for="VideoUrl" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-success">Lưu</button>
+        <a asp-action="Courses" class="btn btn-link">Hủy</a>
+    </div>
+</form>
+

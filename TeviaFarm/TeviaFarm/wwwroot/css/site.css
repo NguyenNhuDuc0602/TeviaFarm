@@ -1,0 +1,63 @@
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.navbar-brand {
+    letter-spacing: 0.03em;
+}
+
+.card {
+    border-radius: 0.75rem;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #198754, #28a745);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #157347, #218838);
+}
+
+/* Carousel background giả lập banner quảng cáo */
+.carousel-bg {
+    min-height: 220px;
+    background-size: cover;
+    background-position: center;
+}
+
+.carousel-bg-1 {
+    background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/images/ba-roi-heo-tra-xanh.jpg');
+}
+
+.carousel-bg-2 {
+    background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/images/bot-tra-xanh.jpg');
+}
+
+.carousel-bg-3 {
+    background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/images/la-tra-xanh.jpg');
+}
+
+/* Tách nút prev/next khỏi nội dung carousel, tránh đè lên nút Mua ngay */
+#homeCarousel {
+    position: relative;
+}
+#homeCarousel .carousel-inner {
+    padding: 0 50px; /* Khoảng trống cho nút điều khiển */
+}
+#homeCarousel .carousel-control-prev,
+#homeCarousel .carousel-control-next {
+    width: 50px;
+    opacity: 0.9;
+    z-index: 10;
+}
+#homeCarousel .carousel-control-prev {
+    left: 0;
+}
+#homeCarousel .carousel-control-next {
+    right: 0;
+}
+#homeCarousel .carousel-bg .p-4 {
+    max-width: 60%; /* Nội dung + nút Mua ngay nằm bên trái, tránh nút next */
+}
+

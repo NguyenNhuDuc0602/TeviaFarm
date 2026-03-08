@@ -1,0 +1,54 @@
+@model IEnumerable<TeviaFarm.Models.Post>
+@{
+    ViewData["Title"] = "Quản lý bài viết cộng đồng";
+}
+
+<h2 class="mb-3">Quản lý bài viết cộng đồng</h2>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tiêu đề</th>
+                <th>Ngày tạo</th>
+                <th>Duyệt</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.PostId</td>
+                <td class="fw-semibold">@p.Title</td>
+                <td>@p.CreatedDate</td>
+                <td>
+                    @if (p.IsApproved)
+                    {
+                        <span class="badge text-bg-success">Đã duyệt</span>
+                    }
+                    else
+                    {
+                        <span class="badge text-bg-warning">Chờ duyệt</span>
+                    }
+                </td>
+                <td class="text-end">
+                    @if (!p.IsApproved)
+                    {
+                        <form asp-action="ApprovePost" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@p.PostId" />
+                            <button type="submit" class="btn btn-sm btn-outline-success">Duyệt</button>
+                        </form>
+                    }
+                    <form asp-action="DeletePost" method="post" class="d-inline">
+                        <input type="hidden" name="id" value="@p.PostId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa bài viết này?');">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+

@@ -1,0 +1,17 @@
+@model IEnumerable<TeviaFarm.Models.Course>
+@{
+    ViewData["Title"] = "Khóa học của tôi";
+}
+
+<h2>Khóa học của tôi</h2>
+
+<ul class="list-group">
+    @foreach (var c in Model)
+    {
+        <li class="list-group-item">
+            <h5>@c.Title</h5>
+            <p>@c.Description</p>
+        </li>
+    }
+</ul>
+
