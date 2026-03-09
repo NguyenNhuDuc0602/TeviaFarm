@@ -141,7 +141,7 @@ namespace TeviaFarm.Controllers
         {
             status = status?.Trim() ?? "";
 
-            var allowedStatuses = new[] { "Pending", "Shipping", "Completed", "Cancelled" };
+            var allowedStatuses = new[] { "Pending", "PendingPayment", "Shipping", "Completed", "Cancelled" };
             if (string.IsNullOrWhiteSpace(status) || !allowedStatuses.Contains(status))
             {
                 TempData["ToastMessage"] = "Trạng thái không hợp lệ.";
@@ -149,21 +149,92 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction(nameof(Orders));
             }
 
-            var order = await _context.Orders.FindAsync(id);
-            if (order != null)
-            {
-                order.Status = status;
-                await _context.SaveChangesAsync();
-                TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id}.";
-                TempData["ToastType"] = "success";
-            }
-            else
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == id);
+
+            if (order == null)
             {
                 TempData["ToastMessage"] = "Không tìm thấy đơn hàng.";
                 TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(Orders));
             }
 
+            var oldStatus = order.Status ?? "";
+
+            if (oldStatus != "Cancelled" && status == "Cancelled")
+            {
+                foreach (var detail in order.OrderDetails)
+                {
+                    if (detail.Product != null)
+                    {
+                        detail.Product.Stock += detail.Quantity;
+                    }
+                }
+            }
+
+            order.Status = status;
+            await _context.SaveChangesAsync();
+
+            TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id}.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Orders));
+        }
+
+        public async Task<IActionResult> CourseOrders(int page = 1)
+        {
+            var query = _context.CourseOrders
+                .Include(o => o.User)
+                .Include(o => o.CourseOrderDetails)
+                .ThenInclude(d => d.Course)
+                .OrderByDescending(o => o.CreatedDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / AdminPageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var orders = await query
+                .Skip((page - 1) * AdminPageSize)
+                .Take(AdminPageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(orders);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelCourseOrder(int id)
+        {
+            var order = await _context.CourseOrders.FindAsync(id);
+
+            if (order == null)
+            {
+                TempData["ToastMessage"] = "Không tìm thấy đơn mua khóa học.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(CourseOrders));
+            }
+
+            if (order.Status == "Paid")
+            {
+                TempData["ToastMessage"] = "Đơn này đã thanh toán thành công, không thể hủy tại đây.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(CourseOrders));
+            }
+
+            order.Status = "Cancelled";
+            order.PaymentStatus = "Failed";
+            await _context.SaveChangesAsync();
+
+            TempData["ToastMessage"] = $"Đã hủy đơn mua khóa học #{id}.";
+            TempData["ToastType"] = "success";
+            return RedirectToAction(nameof(CourseOrders));
         }
 
         public async Task<IActionResult> Users(int page = 1)

@@ -11,7 +11,7 @@ namespace TeviaFarm.Models
         public string Username { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mật khẩu không được để trống.")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải từ 6 ký tự trở lên.")]
+        [StringLength(255, MinimumLength = 8, ErrorMessage = "Mật khẩu phải từ 8 ký tự trở lên.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
@@ -77,6 +77,7 @@ namespace TeviaFarm.Models
     public class Order
     {
         public int OrderId { get; set; }
+
         public int UserId { get; set; }
         public User? User { get; set; }
 
@@ -84,6 +85,7 @@ namespace TeviaFarm.Models
         public decimal TotalAmount { get; set; }
 
         [Required(ErrorMessage = "Trạng thái đơn hàng không hợp lệ.")]
+        [StringLength(50, ErrorMessage = "Trạng thái đơn hàng không hợp lệ.")]
         public string Status { get; set; } = "Pending";
 
         [Required(ErrorMessage = "Địa chỉ giao hàng không được để trống.")]
@@ -91,7 +93,21 @@ namespace TeviaFarm.Models
         public string ShippingAddress { get; set; } = string.Empty;
 
         [StringLength(50, ErrorMessage = "Phương thức thanh toán không hợp lệ.")]
-        public string? PaymentMethod { get; set; } // COD, ChuyenKhoan
+        public string? PaymentMethod { get; set; } // COD, VnPay
+
+        [StringLength(20, ErrorMessage = "Trạng thái thanh toán không hợp lệ.")]
+        public string PaymentStatus { get; set; } = "Unpaid"; // Unpaid, Pending, Paid, Failed
+
+        [StringLength(100, ErrorMessage = "Mã tham chiếu VNPAY không hợp lệ.")]
+        public string? VnpTxnRef { get; set; }
+
+        [StringLength(100, ErrorMessage = "Mã giao dịch VNPAY không hợp lệ.")]
+        public string? VnpTransactionNo { get; set; }
+
+        [StringLength(10, ErrorMessage = "Mã phản hồi thanh toán không hợp lệ.")]
+        public string? PaymentResponseCode { get; set; }
+
+        public DateTime? PaymentDate { get; set; }
 
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
@@ -101,6 +117,7 @@ namespace TeviaFarm.Models
     public class OrderDetail
     {
         public int OrderDetailId { get; set; }
+
         public int OrderId { get; set; }
         public Order? Order { get; set; }
 
@@ -117,6 +134,7 @@ namespace TeviaFarm.Models
     public class Post
     {
         public int PostId { get; set; }
+
         public int UserId { get; set; }
         public User? User { get; set; }
 
@@ -159,6 +177,7 @@ namespace TeviaFarm.Models
     public class Lesson
     {
         public int LessonId { get; set; }
+
         public int CourseId { get; set; }
         public Course? Course { get; set; }
 
@@ -199,7 +218,21 @@ namespace TeviaFarm.Models
         public string Status { get; set; } = "Pending";
 
         [StringLength(50, ErrorMessage = "Phương thức thanh toán không hợp lệ.")]
-        public string? PaymentMethod { get; set; }
+        public string? PaymentMethod { get; set; } // VnPay
+
+        [StringLength(20, ErrorMessage = "Trạng thái thanh toán không hợp lệ.")]
+        public string PaymentStatus { get; set; } = "Unpaid"; // Unpaid, Pending, Paid, Failed
+
+        [StringLength(100, ErrorMessage = "Mã tham chiếu VNPAY không hợp lệ.")]
+        public string? VnpTxnRef { get; set; }
+
+        [StringLength(100, ErrorMessage = "Mã giao dịch VNPAY không hợp lệ.")]
+        public string? VnpTransactionNo { get; set; }
+
+        [StringLength(10, ErrorMessage = "Mã phản hồi thanh toán không hợp lệ.")]
+        public string? PaymentResponseCode { get; set; }
+
+        public DateTime? PaymentDate { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
@@ -219,6 +252,7 @@ namespace TeviaFarm.Models
         [Range(0, double.MaxValue, ErrorMessage = "Giá phải lớn hơn hoặc bằng 0.")]
         public decimal Price { get; set; }
     }
+
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "Tên đăng nhập không được để trống.")]
@@ -242,6 +276,7 @@ namespace TeviaFarm.Models
         [Compare("Password", ErrorMessage = "Xác nhận mật khẩu không khớp.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
+
     public class LoginViewModel
     {
         [Required(ErrorMessage = "Tên đăng nhập không được để trống.")]
@@ -253,4 +288,5 @@ namespace TeviaFarm.Models
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
     }
+
 }

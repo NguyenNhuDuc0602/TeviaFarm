@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
+using TeviaFarm.Services;
 
 namespace TeviaFarm.Controllers
 {
@@ -10,18 +11,23 @@ namespace TeviaFarm.Controllers
     public class OrderController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _config;
+        private readonly VnPayService _vnPayService;
 
         private static class OrderStatuses
         {
             public const string Pending = "Pending";
+            public const string PendingPayment = "PendingPayment";
             public const string Shipping = "Shipping";
             public const string Completed = "Completed";
             public const string Cancelled = "Cancelled";
         }
 
-        public OrderController(AppDbContext context)
+        public OrderController(AppDbContext context, IConfiguration config, VnPayService vnPayService)
         {
             _context = context;
+            _config = config;
+            _vnPayService = vnPayService;
         }
 
         private int? GetCurrentUserId()
@@ -68,7 +74,7 @@ namespace TeviaFarm.Controllers
             }
 
             shippingAddress = shippingAddress?.Trim() ?? "";
-            paymentMethod = paymentMethod?.Trim();
+            paymentMethod = paymentMethod?.Trim() ?? "";
 
             var cart = await _context.Carts
                 .Include(c => c.Items)
@@ -80,7 +86,7 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction("Index", "Cart");
             }
 
-            var allowedPaymentMethods = new[] { "COD", "ChuyenKhoan" };
+            var allowedPaymentMethods = new[] { "COD", "VnPay" };
 
             if (string.IsNullOrWhiteSpace(shippingAddress))
             {
@@ -111,7 +117,8 @@ namespace TeviaFarm.Controllers
 
                 if (item.Product.Stock < item.Quantity)
                 {
-                    ModelState.AddModelError(string.Empty,
+                    ModelState.AddModelError(
+                        string.Empty,
                         $"Sản phẩm '{item.Product.ProductName}' chỉ còn {item.Product.Stock} trong kho, không đủ số lượng bạn đặt.");
                 }
             }
@@ -125,12 +132,17 @@ namespace TeviaFarm.Controllers
 
             try
             {
+                var orderStatus = paymentMethod == "VnPay"
+                    ? OrderStatuses.PendingPayment
+                    : OrderStatuses.Pending;
+
                 var order = new Models.Order
                 {
                     UserId = userId.Value,
                     ShippingAddress = shippingAddress,
                     PaymentMethod = paymentMethod,
-                    Status = OrderStatuses.Pending,
+                    Status = orderStatus,
+                    PaymentStatus = paymentMethod == "VnPay" ? "Pending" : "Unpaid",
                     OrderDate = DateTime.UtcNow,
                     TotalAmount = cart.Items.Sum(i => i.Product!.Price * i.Quantity)
                 };
@@ -144,6 +156,7 @@ namespace TeviaFarm.Controllers
                         Price = item.Product!.Price
                     });
 
+                    // Giữ logic hiện tại của bạn: trừ kho ngay khi tạo đơn
                     item.Product.Stock -= item.Quantity;
                 }
 
@@ -153,7 +166,38 @@ namespace TeviaFarm.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                TempData["ToastMessage"] = "Đặt hàng thành công.";
+                if (paymentMethod == "VnPay")
+                {
+                    var txnRef = $"ORD{order.OrderId}_{DateTime.Now:yyyyMMddHHmmss}";
+                    order.VnpTxnRef = txnRef;
+                    await _context.SaveChangesAsync();
+
+                    var vnpData = new SortedDictionary<string, string>
+                    {
+                        ["vnp_Version"] = "2.1.0",
+                        ["vnp_Command"] = "pay",
+                        ["vnp_TmnCode"] = _config["VnPay:TmnCode"]!,
+                        ["vnp_Amount"] = ((long)order.TotalAmount * 100).ToString(),
+                        ["vnp_CreateDate"] = DateTime.Now.ToString("yyyyMMddHHmmss"),
+                        ["vnp_CurrCode"] = "VND",
+                        ["vnp_IpAddr"] = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                        ["vnp_Locale"] = "vn",
+                        ["vnp_OrderInfo"] = $"Thanh toan don hang {order.OrderId}",
+                        ["vnp_OrderType"] = "other",
+                        ["vnp_ReturnUrl"] = _config["VnPay:ReturnUrl"]!,
+                        ["vnp_TxnRef"] = txnRef,
+                        ["vnp_ExpireDate"] = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss")
+                    };
+
+                    var paymentUrl = _vnPayService.CreatePaymentUrl(
+                        _config["VnPay:BaseUrl"]!,
+                        _config["VnPay:HashSecret"]!,
+                        vnpData);
+
+                    return Redirect(paymentUrl);
+                }
+
+                TempData["ToastMessage"] = "Đặt hàng thành công. Đơn hàng của bạn đang chờ xử lý.";
                 TempData["ToastType"] = "success";
                 return RedirectToAction("Success", new { id = order.OrderId });
             }

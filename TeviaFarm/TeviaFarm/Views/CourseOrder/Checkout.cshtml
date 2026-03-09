@@ -32,6 +32,7 @@
                     </span>
                 </div>
             </div>
+
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead class="table-light">
@@ -63,36 +64,25 @@
                 <input type="hidden" name="id" value="@Model.CourseOrderId" />
 
                 <div class="row g-2 mb-3">
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label class="w-100 border rounded-3 p-3 d-flex gap-2 align-items-start" style="cursor: pointer;">
                             <input class="form-check-input mt-1"
                                    type="radio"
                                    name="paymentMethod"
-                                   value="COD"
+                                   value="VnPay"
                                    checked>
                             <span>
-                                <span class="fw-semibold d-block">COD</span>
-                                <span class="text-muted small">Thanh toán khi nhận hàng</span>
-                            </span>
-                        </label>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="w-100 border rounded-3 p-3 d-flex gap-2 align-items-start" style="cursor: pointer;">
-                            <input class="form-check-input mt-1"
-                                   type="radio"
-                                   name="paymentMethod"
-                                   value="ChuyenKhoan">
-                            <span>
-                                <span class="fw-semibold d-block">Chuyển khoản</span>
-                                <span class="text-muted small">Thanh toán qua ngân hàng</span>
+                                <span class="fw-semibold d-block">VNPAY</span>
+                                <span class="text-muted small">Thanh toán trực tuyến qua cổng VNPAY</span>
                             </span>
                         </label>
                     </div>
                 </div>
 
                 <button type="submit" class="btn btn-success btn-lg w-100">
-                    <i class="bi bi-check2-circle me-1"></i>Xác nhận thanh toán
+                    <i class="bi bi-check2-circle me-1"></i>Tiếp tục thanh toán
                 </button>
+
                 <a asp-action="History" class="btn btn-link w-100 mt-2 text-decoration-none">
                     <i class="bi bi-clock-history me-1"></i>Lịch sử mua khóa học
                 </a>
