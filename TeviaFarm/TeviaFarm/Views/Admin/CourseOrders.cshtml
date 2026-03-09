@@ -1,0 +1,219 @@
+﻿@model IEnumerable<TeviaFarm.Models.CourseOrder>
+@{
+    ViewData["Title"] = "Quản lý đơn khóa học";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+}
+
+@functions {
+    public string GetStatusText(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xác nhận",
+            "Paid" => "Đã thanh toán",
+            "Cancelled" => "Đã hủy",
+            _ => status ?? ""
+        };
+    }
+
+    public string GetStatusBadgeClass(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "Paid" => "bg-success-subtle text-success border border-success-subtle",
+            "Cancelled" => "bg-danger-subtle text-danger border border-danger-subtle",
+            _ => "bg-secondary-subtle text-secondary border border-secondary-subtle"
+        };
+    }
+
+    public string GetPaymentMethodText(string? paymentMethod)
+    {
+        return paymentMethod switch
+        {
+            "VnPay" => "VNPAY",
+            "ChuyenKhoan" => "Chuyển khoản",
+            "COD" => "Thanh toán khi nhận hàng",
+            null => "Chưa chọn",
+            "" => "Chưa chọn",
+            _ => paymentMethod
+        };
+    }
+
+    public string GetPaymentStatusText(string? paymentStatus)
+    {
+        return paymentStatus switch
+        {
+            "Paid" => "Đã thanh toán",
+            "Pending" => "Đang chờ",
+            "Failed" => "Thất bại",
+            "Unpaid" => "Chưa thanh toán",
+            null => "Chưa thanh toán",
+            "" => "Chưa thanh toán",
+            _ => paymentStatus
+        };
+    }
+
+    public string GetPaymentStatusBadgeClass(string? paymentStatus)
+    {
+        return paymentStatus switch
+        {
+            "Paid" => "bg-success-subtle text-success border border-success-subtle",
+            "Pending" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "Failed" => "bg-danger-subtle text-danger border border-danger-subtle",
+            "Unpaid" => "bg-secondary-subtle text-secondary border border-secondary-subtle",
+            null => "bg-secondary-subtle text-secondary border border-secondary-subtle",
+            "" => "bg-secondary-subtle text-secondary border border-secondary-subtle",
+            _ => "bg-secondary-subtle text-secondary border border-secondary-subtle"
+        };
+    }
+
+    public string GetCourseNames(TeviaFarm.Models.CourseOrder order)
+    {
+        if (order.CourseOrderDetails == null || !order.CourseOrderDetails.Any())
+        {
+            return "Không có khóa học";
+        }
+
+        return string.Join(", ",
+            order.CourseOrderDetails
+                .Where(d => d.Course != null)
+                .Select(d => d.Course!.Title));
+    }
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Admin" asp-action="Index">Quản trị</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Đơn khóa học</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Quản lý đơn khóa học</h2>
+        <div class="text-muted small">Theo dõi trạng thái thanh toán VNPAY và tình trạng mở khóa học.</div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày tạo</th>
+                    <th>Người mua</th>
+                    <th>Khóa học</th>
+                    <th>Thanh toán</th>
+                    <th>TT thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Tổng tiền</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td>@o.CourseOrderId</td>
+                            <td>@o.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <div class="fw-semibold">@o.User?.Username</div>
+                                <div class="small text-muted">@o.User?.Email</div>
+                            </td>
+                            <td style="max-width: 260px;">
+                                <div class="fw-semibold">@GetCourseNames(o)</div>
+                            </td>
+                            <td>@GetPaymentMethodText(o.PaymentMethod)</td>
+                            <td>
+                                <span class="badge @GetPaymentStatusBadgeClass(o.PaymentStatus)">
+                                    @GetPaymentStatusText(o.PaymentStatus)
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(o.Status)">
+                                    @GetStatusText(o.Status)
+                                </span>
+                            </td>
+                            <td class="fw-semibold text-success">@o.TotalAmount.ToString("N0") đ</td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                    @if (o.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                            Chờ VNPAY xác nhận
+                                        </span>
+
+                                        <form asp-action="CancelCourseOrder"
+                                              method="post"
+                                              data-confirm-message="Bạn có chắc muốn hủy đơn khóa học này?"
+                                              data-confirm-title="Xác nhận hủy đơn"
+                                              data-confirm-ok="Hủy đơn">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@o.CourseOrderId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Hủy đơn
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (o.Status == "Paid")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            Đã mở khóa
+                                        </span>
+                                    }
+                                    else if (o.Status == "Cancelled")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            Đơn đã hủy
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            Chưa có đơn khóa học nào.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (totalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="CourseOrders" asp-route-page="@(currentPage - 1)">
+                    Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="CourseOrders" asp-route-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="CourseOrders" asp-route-page="@(currentPage + 1)">
+                    Sau
+                </a>
+            </li>
+        </ul>
+    </nav>
+}

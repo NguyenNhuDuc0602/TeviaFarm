@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using TeviaFarm.Data;
-using TeviaFarm.Models;
+using TeviaFarm.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,10 +37,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+// Đăng ký service VNPAY
+builder.Services.AddSingleton<VnPayService>();
+
 var app = builder.Build();
-
-
-// ===== HẾT ĐOẠN CHẠY 1 LẦN =====
 
 // Force Vietnamese culture for number/currency formatting
 var viCulture = new CultureInfo("vi-VN");
@@ -62,7 +61,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Tạm tắt để test VNPAY local bằng http
+// app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();

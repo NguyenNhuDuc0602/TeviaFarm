@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
 using TeviaFarm.Models;
+using TeviaFarm.Services;
 
 namespace TeviaFarm.Controllers
 {
@@ -11,6 +12,8 @@ namespace TeviaFarm.Controllers
     public class CourseOrderController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _config;
+        private readonly VnPayService _vnPayService;
 
         private static class CourseOrderStatuses
         {
@@ -19,9 +22,11 @@ namespace TeviaFarm.Controllers
             public const string Cancelled = "Cancelled";
         }
 
-        public CourseOrderController(AppDbContext context)
+        public CourseOrderController(AppDbContext context, IConfiguration config, VnPayService vnPayService)
         {
             _context = context;
+            _config = config;
+            _vnPayService = vnPayService;
         }
 
         private int? GetCurrentUserId()
@@ -75,7 +80,7 @@ namespace TeviaFarm.Controllers
 
             if (existingPendingOrder != null)
             {
-                TempData["ToastMessage"] = "Bạn có đơn chờ thanh toán cho khóa học này. Tiếp tục thanh toán nhé.";
+                TempData["ToastMessage"] = "Bạn đã có đơn chờ thanh toán cho khóa học này.";
                 TempData["ToastType"] = "info";
                 return RedirectToAction(nameof(Checkout), new { id = existingPendingOrder.CourseOrderId });
             }
@@ -84,6 +89,7 @@ namespace TeviaFarm.Controllers
             {
                 UserId = userId.Value,
                 Status = CourseOrderStatuses.Pending,
+                PaymentStatus = "Unpaid",
                 TotalAmount = course.Price,
                 CreatedDate = DateTime.UtcNow
             };
@@ -97,7 +103,7 @@ namespace TeviaFarm.Controllers
             _context.CourseOrders.Add(order);
             await _context.SaveChangesAsync();
 
-            TempData["ToastMessage"] = "Đã tạo đơn mua khóa học. Vui lòng thanh toán để mở khóa.";
+            TempData["ToastMessage"] = "Đã tạo đơn mua khóa học. Vui lòng tiếp tục thanh toán qua VNPAY.";
             TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Checkout), new { id = order.CourseOrderId });
         }
@@ -156,10 +162,10 @@ namespace TeviaFarm.Controllers
 
             paymentMethod = paymentMethod?.Trim() ?? "";
 
-            var allowedPaymentMethods = new[] { "COD", "ChuyenKhoan" };
+            var allowedPaymentMethods = new[] { "VnPay" };
             if (string.IsNullOrWhiteSpace(paymentMethod) || !allowedPaymentMethods.Contains(paymentMethod))
             {
-                ModelState.AddModelError(string.Empty, "Phương thức thanh toán không hợp lệ.");
+                ModelState.AddModelError(string.Empty, "Khóa học chỉ hỗ trợ thanh toán qua VNPAY.");
             }
 
             var order = await _context.CourseOrders
@@ -187,40 +193,46 @@ namespace TeviaFarm.Controllers
                 return View(order);
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
                 order.PaymentMethod = paymentMethod;
-                order.Status = CourseOrderStatuses.Paid;
+                order.PaymentStatus = "Pending";
+                order.Status = CourseOrderStatuses.Pending;
 
-                foreach (var detail in order.CourseOrderDetails)
+                if (string.IsNullOrWhiteSpace(order.VnpTxnRef))
                 {
-                    var alreadyOwned = await _context.UserCourses
-                        .AnyAsync(x => x.UserId == userId.Value && x.CourseId == detail.CourseId);
-
-                    if (!alreadyOwned)
-                    {
-                        _context.UserCourses.Add(new UserCourse
-                        {
-                            UserId = userId.Value,
-                            CourseId = detail.CourseId,
-                            EnrolledDate = DateTime.UtcNow
-                        });
-                    }
+                    order.VnpTxnRef = $"COURSE{order.CourseOrderId}_{DateTime.Now:yyyyMMddHHmmss}";
                 }
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                TempData["ToastMessage"] = "Thanh toán khóa học thành công.";
-                TempData["ToastType"] = "success";
-                return RedirectToAction(nameof(Success), new { id = order.CourseOrderId });
+                var vnpData = new SortedDictionary<string, string>
+                {
+                    ["vnp_Version"] = "2.1.0",
+                    ["vnp_Command"] = "pay",
+                    ["vnp_TmnCode"] = _config["VnPay:TmnCode"]!,
+                    ["vnp_Amount"] = ((long)order.TotalAmount * 100).ToString(),
+                    ["vnp_CreateDate"] = DateTime.Now.ToString("yyyyMMddHHmmss"),
+                    ["vnp_CurrCode"] = "VND",
+                    ["vnp_IpAddr"] = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    ["vnp_Locale"] = "vn",
+                    ["vnp_OrderInfo"] = $"Thanh toan khoa hoc {order.CourseOrderId}",
+                    ["vnp_OrderType"] = "other",
+                    ["vnp_ReturnUrl"] = _config["VnPay:ReturnUrl"]!,
+                    ["vnp_TxnRef"] = order.VnpTxnRef,
+                    ["vnp_ExpireDate"] = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss")
+                };
+
+                var paymentUrl = _vnPayService.CreatePaymentUrl(
+                    _config["VnPay:BaseUrl"]!,
+                    _config["VnPay:HashSecret"]!,
+                    vnpData);
+
+                return Redirect(paymentUrl);
             }
             catch
             {
-                await transaction.RollbackAsync();
-                ModelState.AddModelError(string.Empty, "Thanh toán khóa học thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError(string.Empty, "Không thể tạo thanh toán VNPAY. Vui lòng thử lại.");
                 return View(order);
             }
         }

@@ -12,6 +12,7 @@
         return status switch
         {
             "Pending" => "Chờ xử lý",
+            "PendingPayment" => "Chờ xác nhận thanh toán",
             "Shipping" => "Đang giao",
             "Completed" => "Hoàn tất",
             "Cancelled" => "Hủy",
@@ -24,10 +25,22 @@
         return status switch
         {
             "Pending" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "PendingPayment" => "bg-primary-subtle text-primary border border-primary-subtle",
             "Shipping" => "bg-info-subtle text-info border border-info-subtle",
             "Completed" => "bg-success-subtle text-success border border-success-subtle",
             "Cancelled" => "bg-danger-subtle text-danger border border-danger-subtle",
             _ => "bg-secondary-subtle text-secondary border border-secondary-subtle"
+        };
+    }
+
+    public string GetPaymentMethodText(string? paymentMethod)
+    {
+        return paymentMethod switch
+        {
+            "COD" => "Thanh toán khi nhận hàng",
+            "VnPay" => "VNPAY",
+            "ChuyenKhoan" => "Chuyển khoản",
+            _ => paymentMethod ?? ""
         };
     }
 }
@@ -43,52 +56,59 @@
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title mb-1">Quản lý đơn hàng</h2>
-        <div class="text-muted small">Cập nhật trạng thái xử lý và theo dõi giao hàng.</div>
+        <div class="text-muted small">Cập nhật trạng thái xử lý, xác nhận thanh toán và theo dõi giao hàng.</div>
     </div>
 </div>
 
 <div class="table-card">
     <div class="table-responsive">
         <table class="table align-middle mb-0">
-        <thead class="table-light">
-            <tr>
-                <th>Mã đơn</th>
-                <th>Ngày đặt</th>
-                <th>Trạng thái</th>
-                <th>Tổng tiền</th>
-                <th>Địa chỉ giao</th>
-                <th class="text-end">Cập nhật</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var o in Model)
-            {
+            <thead class="table-light">
                 <tr>
-                    <td>@o.OrderId</td>
-                    <td>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                    <td>
-                        <span class="badge @GetStatusBadgeClass(o.Status)">@GetStatusText(o.Status)</span>
-                    </td>
-                    <td class="fw-semibold text-success">@o.TotalAmount.ToString("N0") đ</td>
-                    <td>@o.ShippingAddress</td>
-                    <td class="text-end">
-                        <form asp-action="UpdateOrderStatus" method="post" class="d-flex justify-content-end gap-2">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@o.OrderId" />
-                            <select name="status" class="form-select form-select-sm" style="max-width: 180px;">
-                                <option value="Pending" selected="@(o.Status == "Pending")">Chờ xử lý</option>
-                                <option value="Shipping" selected="@(o.Status == "Shipping")">Đang giao</option>
-                                <option value="Completed" selected="@(o.Status == "Completed")">Hoàn tất</option>
-                                <option value="Cancelled" selected="@(o.Status == "Cancelled")">Hủy</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                <i class="bi bi-check2-circle me-1"></i>Lưu
-                            </button>
-                        </form>
-                    </td>
+                    <th>Mã đơn</th>
+                    <th>Ngày đặt</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Tổng tiền</th>
+                    <th>Địa chỉ giao</th>
+                    <th class="text-end">Cập nhật</th>
                 </tr>
-            }
-        </tbody>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td>@o.OrderId</td>
+                        <td>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <div class="small fw-semibold">@GetPaymentMethodText(o.PaymentMethod)</div>
+                        </td>
+                        <td>
+                            <span class="badge @GetStatusBadgeClass(o.Status)">@GetStatusText(o.Status)</span>
+                        </td>
+                        <td class="fw-semibold text-success">@o.TotalAmount.ToString("N0") đ</td>
+                        <td>@o.ShippingAddress</td>
+                        <td class="text-end">
+                            <form asp-action="UpdateOrderStatus" method="post" class="d-flex justify-content-end gap-2 flex-wrap">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@o.OrderId" />
+
+                                <select name="status" class="form-select form-select-sm" style="max-width: 220px;">
+                                    <option value="Pending" selected="@(o.Status == "Pending")">Chờ xử lý</option>
+                                    <option value="PendingPayment" selected="@(o.Status == "PendingPayment")">Chờ xác nhận thanh toán</option>
+                                    <option value="Shipping" selected="@(o.Status == "Shipping")">Đang giao</option>
+                                    <option value="Completed" selected="@(o.Status == "Completed")">Hoàn tất</option>
+                                    <option value="Cancelled" selected="@(o.Status == "Cancelled")">Hủy</option>
+                                </select>
+
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
         </table>
     </div>
 </div>

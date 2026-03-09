@@ -12,7 +12,7 @@
 <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-4">
     <div>
         <h2 class="page-title mb-1">Bảng điều khiển quản trị</h2>
-        <div class="text-muted small">Quản lý sản phẩm, đơn hàng, người dùng, bài viết và khóa học.</div>
+        <div class="text-muted small">Quản lý sản phẩm, đơn hàng, đơn khóa học, người dùng, bài viết và khóa học.</div>
     </div>
 </div>
 
@@ -42,9 +42,26 @@
                         <div>
                             <div class="text-muted small">Đơn hàng</div>
                             <h3 class="h5 page-title mb-2">Quản lý đơn hàng</h3>
-                            <div class="text-muted">Theo dõi và cập nhật trạng thái giao hàng.</div>
+                            <div class="text-muted">Theo dõi, xác nhận thanh toán và cập nhật trạng thái giao hàng.</div>
                         </div>
                         <div class="text-success fs-3"><i class="bi bi-receipt"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="CourseOrders" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Khóa học</div>
+                            <h3 class="h5 page-title mb-2">Quản lý đơn khóa học</h3>
+                            <div class="text-muted">Xác nhận thanh toán và mở khóa học cho học viên.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-credit-card-2-front"></i></div>
                     </div>
                 </div>
             </div>
@@ -102,4 +119,3 @@
         </a>
     </div>
 </div>
-
