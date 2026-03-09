@@ -26,9 +26,28 @@ namespace TeviaFarm.Controllers
             return int.Parse(userIdClaim);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var courses = await _context.Courses.ToListAsync();
+            const int pageSize = 9;
+
+            var query = _context.Courses
+                .OrderByDescending(c => c.CourseId)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var courses = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
             return View(courses);
         }
 

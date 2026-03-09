@@ -22,57 +22,62 @@ namespace TeviaFarm.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            return View();
+            return View(new RegisterViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(User user)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            user.Username = user.Username?.Trim() ?? "";
-            user.Email = user.Email?.Trim() ?? "";
-            user.Password = user.Password ?? "";
-
-            if (string.IsNullOrWhiteSpace(user.Username))
-            {
-                ModelState.AddModelError("Username", "Tên đăng nhập không được để trống.");
-            }
-
-            if (string.IsNullOrWhiteSpace(user.Email))
-            {
-                ModelState.AddModelError("Email", "Email không được để trống.");
-            }
-
-            if (string.IsNullOrWhiteSpace(user.Password))
-            {
-                ModelState.AddModelError("Password", "Mật khẩu không được để trống.");
-            }
+            model.Username = (model.Username ?? "").Trim();
+            model.Email = (model.Email ?? "").Trim().ToLower();
+            model.Password = model.Password ?? "";
+            model.ConfirmPassword = model.ConfirmPassword ?? "";
 
             if (!ModelState.IsValid)
             {
-                return View(user);
+                return View(model);
             }
 
-            var exists = await _context.Users.AnyAsync(u => u.Username == user.Username);
-            if (exists)
+            if (model.Username.Contains(" "))
             {
-                ModelState.AddModelError("Username", "Username already exists");
-                return View(user);
+                ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập không được chứa khoảng trắng.");
+                return View(model);
             }
 
-            var emailExists = await _context.Users.AnyAsync(u => u.Email == user.Email);
+            var usernameExists = await _context.Users
+                .AnyAsync(u => u.Username.ToLower() == model.Username.ToLower());
+
+            if (usernameExists)
+            {
+                ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại.");
+                return View(model);
+            }
+
+            var emailExists = await _context.Users
+                .AnyAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
             if (emailExists)
             {
-                ModelState.AddModelError("Email", "Email already exists");
-                return View(user);
+                ModelState.AddModelError(nameof(model.Email), "Email đã tồn tại.");
+                return View(model);
             }
 
-            user.Role = "Customer";
-            user.CreatedDate = DateTime.UtcNow;
-            user.Password = _passwordHasher.HashPassword(user, user.Password);
+            var user = new User
+            {
+                Username = model.Username,
+                Email = model.Email,
+                Role = "Customer",
+                CreatedDate = DateTime.UtcNow
+            };
+
+            user.Password = _passwordHasher.HashPassword(user, model.Password);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            TempData["ToastMessage"] = "Đăng ký tài khoản thành công. Vui lòng đăng nhập.";
+            TempData["ToastType"] = "success";
 
             return RedirectToAction(nameof(Login));
         }
@@ -80,37 +85,36 @@ namespace TeviaFarm.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            return View();
+            return View(new LoginViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            username = username?.Trim() ?? "";
-            password = password ?? "";
+            model.Username = (model.Username ?? "").Trim();
+            model.Password = model.Password ?? "";
 
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng");
-                return View();
+                return View(model);
             }
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == model.Username.ToLower());
 
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng");
-                return View();
+                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng.");
+                return View(model);
             }
 
-            var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.Password, password);
+            var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.Password, model.Password);
 
             if (verifyResult == PasswordVerificationResult.Failed)
             {
-                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng");
-                return View();
+                ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng.");
+                return View(model);
             }
 
             var claims = new List<Claim>
@@ -136,12 +140,17 @@ namespace TeviaFarm.Controllers
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
 
+            TempData["ToastMessage"] = $"Đăng nhập thành công. Xin chào {user.Username}!";
+            TempData["ToastType"] = "success";
+
             return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
         public IActionResult AccessDenied()
         {
+            TempData["ToastMessage"] = "Bạn không có quyền truy cập chức năng này.";
+            TempData["ToastType"] = "warning";
             return View();
         }
 
@@ -149,6 +158,10 @@ namespace TeviaFarm.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
+
+            TempData["ToastMessage"] = "Đăng xuất thành công.";
+            TempData["ToastType"] = "info";
+
             return RedirectToAction("Index", "Home");
         }
     }

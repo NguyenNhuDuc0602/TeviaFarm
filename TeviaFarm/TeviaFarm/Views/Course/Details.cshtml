@@ -6,73 +6,127 @@
     var isOwned = ViewBag.IsOwned != null && (bool)ViewBag.IsOwned;
 }
 
-<h2>@Model.Title</h2>
-<p>@Model.Description</p>
-<p class="fw-bold text-success">@Model.Price.ToString("N0") đ</p>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Course" asp-action="Index">Khóa học</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+    </ol>
+</nav>
 
-@if (isLoggedIn)
-{
-    @if (isOwned || isAdmin)
-    {
-        <div class="mb-3">
-            <button type="button" class="btn btn-secondary" disabled>Đã mua</button>
-        </div>
-    }
-    else
-    {
-        <form asp-controller="CourseOrder" asp-action="Buy" method="post" class="mb-3">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="courseId" value="@Model.CourseId" />
-            <button type="submit" class="btn btn-success">Mua khóa học</button>
-        </form>
-    }
-}
-else
-{
-    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary mb-3">
-        Đăng nhập để mua khóa học
-    </a>
-}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="summary-card p-3 p-lg-4">
+            <h2 class="page-title mb-2">@Model.Title</h2>
+            <p class="text-muted mb-3">@Model.Description</p>
 
-<h4>Bài học</h4>
-<ul class="list-group mb-3">
-    @foreach (var l in Model.Lessons)
-    {
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span>@l.Title</span>
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-cash-coin me-1"></i>@Model.Price.ToString("N0") đ
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                    <i class="bi bi-collection-play me-1"></i>@(Model.Lessons?.Count ?? 0) bài học
+                </span>
+            </div>
 
-            @if (!string.IsNullOrEmpty(l.VideoUrl))
+            @if (isLoggedIn)
             {
-                @if (isLoggedIn)
+                @if (isOwned || isAdmin)
                 {
-                    @if (isOwned || isAdmin)
-                    {
-                        <a asp-controller="Course"
-                           asp-action="Lesson"
-                           asp-route-id="@l.LessonId"
-                           class="btn btn-sm btn-outline-primary">
-                            Xem bài học
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="text-muted small">Mua khóa học để xem</span>
-                    }
+                    <button type="button" class="btn btn-outline-success w-100" disabled>
+                        <i class="bi bi-check2-circle me-1"></i>Đã mua
+                    </button>
                 }
                 else
                 {
-                    <a asp-controller="Account"
-                       asp-action="Login"
-                       class="btn btn-sm btn-outline-primary">
-                        Đăng nhập để xem
-                    </a>
+                    <form asp-controller="CourseOrder" asp-action="Buy" method="post" class="mb-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="courseId" value="@Model.CourseId" />
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-cart-plus me-1"></i>Mua khóa học
+                        </button>
+                    </form>
                 }
             }
-        </li>
-    }
-</ul>
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-success w-100">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập để mua khóa học
+                </a>
+            }
 
-<div class="d-flex gap-2">
-    <a asp-controller="Course" asp-action="MyCourses" class="btn btn-secondary">Khóa học của tôi</a>
-    <a asp-controller="CourseOrder" asp-action="History" class="btn btn-outline-secondary">Lịch sử mua khóa học</a>
+            <div class="d-grid gap-2 mt-3">
+                <a asp-controller="Course" asp-action="MyCourses" class="btn btn-outline-success">
+                    <i class="bi bi-mortarboard me-1"></i>Khóa học của tôi
+                </a>
+                <a asp-controller="CourseOrder" asp-action="History" class="btn btn-outline-success">
+                    <i class="bi bi-clock-history me-1"></i>Lịch sử mua khóa học
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="table-card">
+            <div class="p-3 p-lg-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h3 class="h5 page-title mb-0">Bài học</h3>
+                @if (isOwned || isAdmin)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="bi bi-unlock me-1"></i>Đã mở khóa
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                        <i class="bi bi-lock me-1"></i>Cần mua để xem video
+                    </span>
+                }
+            </div>
+
+            <ul class="list-group list-group-flush">
+                @foreach (var l in Model.Lessons)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-play-circle text-success"></i>
+                            <span class="fw-semibold">@l.Title</span>
+                        </span>
+
+                        @if (!string.IsNullOrEmpty(l.VideoUrl))
+                        {
+                            @if (isLoggedIn)
+                            {
+                                @if (isOwned || isAdmin)
+                                {
+                                    <a asp-controller="Course"
+                                       asp-action="Lesson"
+                                       asp-route-id="@l.LessonId"
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-play me-1"></i>Xem bài học
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small"><i class="bi bi-lock me-1"></i>Mua khóa học để xem</span>
+                                }
+                            }
+                            else
+                            {
+                                <a asp-controller="Account"
+                                   asp-action="Login"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập để xem
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Chưa có video</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
 </div>

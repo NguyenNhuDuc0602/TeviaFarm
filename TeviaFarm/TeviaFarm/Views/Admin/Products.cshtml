@@ -1,16 +1,33 @@
 @model IEnumerable<TeviaFarm.Models.Product>
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Quản lý sản phẩm</h2>
-    <a asp-action="CreateProduct" class="btn btn-success">Thêm sản phẩm</a>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Admin" asp-action="Index">Quản trị</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Sản phẩm</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Quản lý sản phẩm</h2>
+        <div class="text-muted small">Tạo mới, chỉnh sửa, quản lý tồn kho và hình ảnh.</div>
+    </div>
+    <a asp-action="CreateProduct" class="btn btn-success">
+        <i class="bi bi-plus-lg me-1"></i>Thêm sản phẩm
+    </a>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
-        <thead>
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+        <thead class="table-light">
             <tr>
                 <th>ID</th>
                 <th>Tên sản phẩm</th>
@@ -27,28 +44,64 @@
                     <td>@p.ProductId</td>
                     <td class="fw-semibold">@p.ProductName</td>
                     <td>@p.Price.ToString("N0") đ/kg</td>
-                    <td>@p.Stock</td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-box-seam me-1"></i>@p.Stock
+                        </span>
+                    </td>
                     <td>
                         @if (!string.IsNullOrEmpty(p.ImageUrl))
                         {
-                            <img src="@Url.Content(p.ImageUrl)" alt="@p.ProductName" style="width:80px;height:50px;object-fit:cover;border-radius:6px;" />
+                            <img src="@Url.Content(p.ImageUrl)" alt="@p.ProductName" style="width:84px;height:52px;object-fit:cover;border-radius:10px;border:1px solid rgba(15, 23, 42, 0.10);" loading="lazy" />
                         }
                     </td>
                     <td class="text-end">
-                        <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn btn-sm btn-outline-primary">Sửa</a>
+                        <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-pencil-square me-1"></i>Sửa
+                        </a>
 
-                        <form asp-action="DeleteProduct" method="post" class="d-inline">
+                        <form asp-action="DeleteProduct"
+                              method="post"
+                              class="d-inline"
+                              data-confirm-message="Xóa sản phẩm này? Thao tác không thể hoàn tác."
+                              data-confirm-title="Xác nhận xóa"
+                              data-confirm-ok="Xóa">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@p.ProductId" />
-                            <button type="submit"
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Xóa sản phẩm này?');">
-                                Xóa
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>Xóa
                             </button>
                         </form>
                     </td>
                 </tr>
             }
         </tbody>
-    </table>
+        </table>
+    </div>
 </div>
+
+@if (totalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Products" asp-route-page="@(currentPage - 1)">
+                    Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="Products" asp-route-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Products" asp-route-page="@(currentPage + 1)">
+                    Sau
+                </a>
+            </li>
+        </ul>
+    </nav>
+}

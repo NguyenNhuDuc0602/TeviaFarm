@@ -109,6 +109,8 @@ namespace TeviaFarm.Controllers
             }
 
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = $"Đã thêm vào giỏ: {product.ProductName} (x{quantity}).";
+            TempData["ToastType"] = "success";
             return RedirectToAction("Index");
         }
 
@@ -158,6 +160,8 @@ namespace TeviaFarm.Controllers
             }
 
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = quantity == 0 ? "Đã xóa sản phẩm khỏi giỏ hàng." : "Đã cập nhật số lượng.";
+            TempData["ToastType"] = "success";
             return RedirectToAction("Index");
         }
 
@@ -195,6 +199,8 @@ namespace TeviaFarm.Controllers
             _context.CartItems.Remove(item);
             await _context.SaveChangesAsync();
 
+            TempData["ToastMessage"] = "Đã xóa sản phẩm khỏi giỏ hàng.";
+            TempData["ToastType"] = "success";
             return RedirectToAction("Index");
         }
     }

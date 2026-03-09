@@ -3,46 +3,57 @@
     ViewData["Title"] = "Khóa học của tôi";
 }
 
-<h2>Khóa học của tôi</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Khóa học của tôi</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Khóa học của tôi</h2>
+        <div class="text-muted small">Danh sách khóa học bạn đã mua và có quyền truy cập.</div>
+    </div>
+    <a asp-controller="Course" asp-action="Index" class="btn btn-outline-success">
+        <i class="bi bi-collection-play me-1"></i>Xem thêm khóa học
+    </a>
+</div>
 
 @if (Model == null || !Model.Any())
 {
-    <div class="alert alert-info">
-        Bạn chưa đăng ký khóa học nào.
+    <div class="card card-hover">
+        <div class="card-body p-4 p-lg-5 text-center">
+            <div class="display-6 mb-2"><i class="bi bi-mortarboard text-success"></i></div>
+            <h3 class="h5 page-title mb-2">Bạn chưa có khóa học nào</h3>
+            <p class="text-muted mb-3">Chọn khóa học phù hợp và bắt đầu học ngay.</p>
+            <a asp-controller="Course" asp-action="Index" class="btn btn-success">
+                <i class="bi bi-collection-play me-1"></i>Xem danh sách khóa học
+            </a>
+        </div>
     </div>
-
-    <a asp-controller="Course" asp-action="Index" class="btn btn-primary">
-        Xem danh sách khóa học
-    </a>
 }
 else
 {
-    <ul class="list-group">
+    <div class="row g-4">
         @foreach (var c in Model)
         {
-            <li class="list-group-item">
-                <h5>@c.Title</h5>
-                <p>@c.Description</p>
-
-                @if (c.Lessons != null && c.Lessons.Any())
-                {
-                    <div class="mt-2">
-                        <strong>Bài học:</strong>
-                        <ul class="mt-2">
-                            @foreach (var lesson in c.Lessons)
-                            {
-                                <li>
-                                    <a asp-controller="Course"
-                                       asp-action="Lesson"
-                                       asp-route-id="@lesson.LessonId">
-                                        @lesson.Title
-                                    </a>
-                                </li>
-                            }
-                        </ul>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <h5 class="card-title mb-2">@c.Title</h5>
+                        <p class="text-muted line-clamp-2 mb-3">@c.Description</p>
+                        <div class="mt-auto d-grid gap-2">
+                            <a asp-controller="Course" asp-action="Details" asp-route-id="@c.CourseId" class="btn btn-success btn-sm">
+                                <i class="bi bi-play-circle me-1"></i>Vào khóa học
+                            </a>
+                            <div class="text-muted small">
+                                <i class="bi bi-collection-play me-1"></i>@(c.Lessons?.Count ?? 0) bài học
+                            </div>
+                        </div>
                     </div>
-                }
-            </li>
+                </div>
+            </div>
         }
-    </ul>
+    </div>
 }

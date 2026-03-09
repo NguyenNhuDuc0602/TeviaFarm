@@ -5,13 +5,22 @@
     var isMp4 = videoUrl.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Course" asp-action="Index">Khóa học</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Course" asp-action="Details" asp-route-id="@Model.CourseId">@Model.Course?.Title</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
-        <h2 class="mb-1">@Model.Title</h2>
+        <h2 class="page-title mb-1">@Model.Title</h2>
         <div class="text-muted">Khóa học: @Model.Course?.Title</div>
     </div>
-    <a asp-controller="Course" asp-action="Details" asp-route-id="@Model.CourseId" class="btn btn-outline-secondary btn-sm">
-        ← Quay lại khóa học
+    <a asp-controller="Course" asp-action="Details" asp-route-id="@Model.CourseId" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại khóa học
     </a>
 </div>
 
@@ -21,7 +30,7 @@
 }
 else if (isMp4)
 {
-    <div class="ratio ratio-16x9 shadow-sm rounded overflow-hidden">
+    <div class="ratio ratio-16x9 shadow-sm rounded-4 overflow-hidden border">
         <video controls preload="metadata">
             <source src="@videoUrl" type="video/mp4" />
             Trình duyệt của bạn không hỗ trợ phát video.

@@ -1,29 +1,113 @@
 @model IEnumerable<TeviaFarm.Models.Order>
 @{
     ViewData["Title"] = "Lịch sử đơn hàng";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    string GetStatusText(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xử lý",
+            "Shipping" => "Đang giao",
+            "Completed" => "Hoàn tất",
+            "Cancelled" => "Hủy",
+            _ => status ?? ""
+        };
+    }
+
+    string GetStatusBadgeClass(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "Shipping" => "bg-info-subtle text-info border border-info-subtle",
+            "Completed" => "bg-success-subtle text-success border border-success-subtle",
+            "Cancelled" => "bg-danger-subtle text-danger border border-danger-subtle",
+            _ => "bg-secondary-subtle text-secondary border border-secondary-subtle"
+        };
+    }
 }
 
-<h2>Lịch sử đơn hàng</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Lịch sử đơn hàng</li>
+    </ol>
+</nav>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Mã đơn</th>
-            <th>Ngày đặt</th>
-            <th>Trạng thái</th>
-            <th>Tổng tiền</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var o in Model)
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Lịch sử đơn hàng</h2>
+        <div class="text-muted small">Theo dõi trạng thái và tổng tiền các đơn đã đặt.</div>
+    </div>
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="card card-hover">
+        <div class="card-body p-4 p-lg-5 text-center">
+            <div class="display-6 mb-2"><i class="bi bi-receipt text-success"></i></div>
+            <h3 class="h5 page-title mb-2">Bạn chưa có đơn hàng nào</h3>
+            <p class="text-muted mb-3">Khám phá sản phẩm và tạo đơn hàng đầu tiên của bạn.</p>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-success">
+                <i class="bi bi-bag me-1"></i>Xem sản phẩm
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Ngày đặt</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Tổng tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">#@o.OrderId</td>
+                        <td>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><span class="badge @GetStatusBadgeClass(o.Status)">@GetStatusText(o.Status)</span></td>
+                        <td class="text-end fw-bold text-success">@o.TotalAmount.ToString("N0") đ</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (totalPages > 1)
     {
-        <tr>
-            <td>@o.OrderId</td>
-            <td>@o.OrderDate</td>
-            <td>@o.Status</td>
-            <td>@o.TotalAmount.ToString("N0") đ</td>
-        </tr>
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="History" asp-route-page="@(currentPage - 1)">
+                        Trước
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-action="History" asp-route-page="@i">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="History" asp-route-page="@(currentPage + 1)">
+                        Sau
+                    </a>
+                </li>
+            </ul>
+        </nav>
     }
-    </tbody>
-</table>
+}
 

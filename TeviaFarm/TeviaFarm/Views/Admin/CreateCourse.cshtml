@@ -33,3 +33,9 @@
         <a asp-action="Courses" class="btn btn-link">Hủy</a>
     </div>
 </form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
