@@ -3,37 +3,87 @@
     ViewData["Title"] = "Đặt hàng thành công";
 }
 
-<h2>Đặt hàng thành công</h2>
-<p>Mã đơn hàng của bạn là <strong>@Model.OrderId</strong>.</p>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Order" asp-action="History">Đơn hàng</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Thành công</li>
+    </ol>
+</nav>
 
-<h4>Thông tin đơn hàng</h4>
-<ul>
-    <li>Trạng thái: @Model.Status</li>
-    <li>Ngày đặt: @Model.OrderDate</li>
-    <li>Địa chỉ giao hàng: @Model.ShippingAddress</li>
-    <li>Tổng tiền: @Model.TotalAmount.ToString("N0") đ</li>
-</ul>
+<div class="card card-hover mb-4">
+    <div class="card-body p-4 p-lg-5">
+        <div class="d-flex align-items-start gap-3">
+            <div class="text-success fs-1"><i class="bi bi-check2-circle"></i></div>
+            <div>
+                <h2 class="page-title mb-1">Đặt hàng thành công</h2>
+                <div class="text-muted">Mã đơn hàng của bạn là <span class="fw-semibold text-success">#@Model.OrderId</span>.</div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<h4>Sản phẩm trong đơn</h4>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Sản phẩm</th>
-            <th>Số lượng</th>
-            <th>Đơn giá</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var d in Model.OrderDetails)
-    {
-        <tr>
-            <td>@d.Product?.ProductName</td>
-            <td>@d.Quantity</td>
-            <td>@d.Price.ToString("N0") đ</td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="summary-card p-3 p-lg-4">
+            <h3 class="h5 page-title mb-3">Thông tin đơn hàng</h3>
+            <div class="d-grid gap-2">
+                <div class="d-flex justify-content-between gap-3">
+                    <span class="text-muted">Trạng thái</span>
+                    <span class="fw-semibold">@Model.Status</span>
+                </div>
+                <div class="d-flex justify-content-between gap-3">
+                    <span class="text-muted">Ngày đặt</span>
+                    <span class="fw-semibold">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="d-flex justify-content-between gap-3">
+                    <span class="text-muted">Tổng tiền</span>
+                    <span class="fw-bold text-success">@Model.TotalAmount.ToString("N0") đ</span>
+                </div>
+                <div>
+                    <div class="text-muted mb-1">Địa chỉ giao hàng</div>
+                    <div class="fw-semibold">@Model.ShippingAddress</div>
+                </div>
+            </div>
 
-<a asp-controller="Home" asp-action="Index" class="btn btn-success">Về trang chủ</a>
+            <div class="d-grid gap-2 mt-3">
+                <a asp-controller="Order" asp-action="History" class="btn btn-outline-success">
+                    <i class="bi bi-receipt me-1"></i>Xem lịch sử đơn hàng
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-success">
+                    <i class="bi bi-house-door me-1"></i>Về trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="table-card">
+            <div class="p-3 p-lg-4 border-bottom">
+                <h3 class="h5 page-title mb-0">Sản phẩm trong đơn</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th class="text-center" style="width: 110px;">Số lượng</th>
+                            <th class="text-end" style="width: 180px;">Đơn giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var d in Model.OrderDetails)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@d.Product?.ProductName</td>
+                            <td class="text-center">@d.Quantity</td>
+                            <td class="text-end fw-semibold">@d.Price.ToString("N0") đ</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 

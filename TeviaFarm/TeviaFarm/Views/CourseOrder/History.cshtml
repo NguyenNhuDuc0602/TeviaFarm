@@ -1,7 +1,9 @@
-﻿@model IEnumerable<TeviaFarm.Models.CourseOrder>
+@model IEnumerable<TeviaFarm.Models.CourseOrder>
 @{
     ViewData["Title"] = "Lịch sử mua khóa học";
     var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
 
     string GetStatusText(string? status)
     {
@@ -13,23 +15,55 @@
             _ => status ?? ""
         };
     }
+
+    string GetStatusBadgeClass(string? status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "Paid" => "bg-success-subtle text-success border border-success-subtle",
+            "Cancelled" => "bg-danger-subtle text-danger border border-danger-subtle",
+            _ => "bg-secondary-subtle text-secondary border border-secondary-subtle"
+        };
+    }
 }
 
-<h2>Lịch sử mua khóa học</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Lịch sử mua khóa học</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Lịch sử mua khóa học</h2>
+        <div class="text-muted small">Xem đơn mua khóa học và trạng thái thanh toán.</div>
+    </div>
+    <a asp-controller="Course" asp-action="Index" class="btn btn-outline-success">
+        <i class="bi bi-collection-play me-1"></i>Xem khóa học
+    </a>
+</div>
 
 @if (Model == null || !Model.Any())
 {
-    <div class="alert alert-info">
-        Bạn chưa có đơn mua khóa học nào.
+    <div class="card card-hover">
+        <div class="card-body p-4 p-lg-5 text-center">
+            <div class="display-6 mb-2"><i class="bi bi-mortarboard text-success"></i></div>
+            <h3 class="h5 page-title mb-2">Bạn chưa có đơn mua khóa học nào</h3>
+            <p class="text-muted mb-3">Chọn khóa học phù hợp và bắt đầu hành trình học tập.</p>
+            <a asp-controller="Course" asp-action="Index" class="btn btn-success">
+                <i class="bi bi-collection-play me-1"></i>Xem danh sách khóa học
+            </a>
+        </div>
     </div>
-
-    <a asp-controller="Course" asp-action="Index" class="btn btn-primary">Xem danh sách khóa học</a>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+            <thead class="table-light">
                 <tr>
                     <th>Mã đơn</th>
                     <th>Ngày tạo</th>
@@ -43,18 +77,18 @@ else
                 @foreach (var order in Model)
                 {
             <tr>
-                <td>@order.CourseOrderId</td>
-                <td>@order.CreatedDate</td>
-                <td>@GetStatusText(order.Status)</td>
-                <td>@order.TotalAmount.ToString("N0", culture) đ</td>
+                <td class="fw-semibold">#@order.CourseOrderId</td>
+                <td>@order.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                <td><span class="badge @GetStatusBadgeClass(order.Status)">@GetStatusText(order.Status)</span></td>
+                <td class="fw-bold text-success">@order.TotalAmount.ToString("N0", culture) đ</td>
                 <td>
                     @string.Join(", ", order.CourseOrderDetails
                                         .Where(x => x.Course != null)
                                         .Select(x => x.Course!.Title))
                 </td>
                 <td class="text-end">
-                    <a asp-action="Details" asp-route-id="@order.CourseOrderId" class="btn btn-sm btn-outline-primary">
-                        Xem chi tiết
+                    <a asp-action="Details" asp-route-id="@order.CourseOrderId" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-eye me-1"></i>Xem chi tiết
                     </a>
                 </td>
             </tr>
@@ -62,4 +96,31 @@ else
             </tbody>
         </table>
     </div>
+        </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="History" asp-route-page="@(currentPage - 1)">
+                        Trước
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-action="History" asp-route-page="@i">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="History" asp-route-page="@(currentPage + 1)">
+                        Sau
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
 }

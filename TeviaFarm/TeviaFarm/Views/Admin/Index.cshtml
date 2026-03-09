@@ -2,13 +2,104 @@
     ViewData["Title"] = "Bảng điều khiển quản trị";
 }
 
-<h2>Bảng điều khiển quản trị</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Quản trị</li>
+    </ol>
+</nav>
 
-<div class="list-group">
-    <a asp-action="Products" class="list-group-item list-group-item-action">Quản lý sản phẩm</a>
-    <a asp-action="Orders" class="list-group-item list-group-item-action">Quản lý đơn hàng</a>
-    <a asp-action="Users" class="list-group-item list-group-item-action">Quản lý người dùng</a>
-    <a asp-action="Posts" class="list-group-item list-group-item-action">Quản lý bài viết cộng đồng</a>
-    <a asp-action="Courses" class="list-group-item list-group-item-action">Quản lý khóa học</a>
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-4">
+    <div>
+        <h2 class="page-title mb-1">Bảng điều khiển quản trị</h2>
+        <div class="text-muted small">Quản lý sản phẩm, đơn hàng, người dùng, bài viết và khóa học.</div>
+    </div>
+</div>
+
+<div class="row g-3 g-lg-4">
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="Products" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Sản phẩm</div>
+                            <h3 class="h5 page-title mb-2">Quản lý sản phẩm</h3>
+                            <div class="text-muted">Tạo, sửa, xóa và cập nhật tồn kho.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-box-seam"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="Orders" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Đơn hàng</div>
+                            <h3 class="h5 page-title mb-2">Quản lý đơn hàng</h3>
+                            <div class="text-muted">Theo dõi và cập nhật trạng thái giao hàng.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-receipt"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="Users" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Tài khoản</div>
+                            <h3 class="h5 page-title mb-2">Quản lý người dùng</h3>
+                            <div class="text-muted">Xem danh sách người dùng và phân quyền.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="Posts" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Cộng đồng</div>
+                            <h3 class="h5 page-title mb-2">Duyệt bài viết</h3>
+                            <div class="text-muted">Duyệt và quản lý nội dung cộng đồng.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-chat-square-text"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <a asp-action="Courses" class="text-decoration-none">
+            <div class="card card-hover h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted small">Khóa học</div>
+                            <h3 class="h5 page-title mb-2">Quản lý khóa học</h3>
+                            <div class="text-muted">Tạo khóa học và thêm bài học.</div>
+                        </div>
+                        <div class="text-success fs-3"><i class="bi bi-mortarboard"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 

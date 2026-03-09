@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +61,8 @@ namespace TeviaFarm.Controllers
 
             if (alreadyOwned)
             {
+                TempData["ToastMessage"] = "Bạn đã sở hữu khóa học này rồi.";
+                TempData["ToastType"] = "info";
                 return RedirectToAction("Details", "Course", new { id = courseId });
             }
 
@@ -73,6 +75,8 @@ namespace TeviaFarm.Controllers
 
             if (existingPendingOrder != null)
             {
+                TempData["ToastMessage"] = "Bạn có đơn chờ thanh toán cho khóa học này. Tiếp tục thanh toán nhé.";
+                TempData["ToastType"] = "info";
                 return RedirectToAction(nameof(Checkout), new { id = existingPendingOrder.CourseOrderId });
             }
 
@@ -93,6 +97,8 @@ namespace TeviaFarm.Controllers
             _context.CourseOrders.Add(order);
             await _context.SaveChangesAsync();
 
+            TempData["ToastMessage"] = "Đã tạo đơn mua khóa học. Vui lòng thanh toán để mở khóa.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Checkout), new { id = order.CourseOrderId });
         }
 
@@ -207,6 +213,8 @@ namespace TeviaFarm.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                TempData["ToastMessage"] = "Thanh toán khóa học thành công.";
+                TempData["ToastType"] = "success";
                 return RedirectToAction(nameof(Success), new { id = order.CourseOrderId });
             }
             catch
@@ -282,7 +290,7 @@ namespace TeviaFarm.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History(int page = 1)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -290,12 +298,28 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var orders = await _context.CourseOrders
+            const int pageSize = 10;
+
+            var query = _context.CourseOrders
                 .Include(o => o.CourseOrderDetails)
                 .ThenInclude(d => d.Course)
                 .Where(o => o.UserId == userId.Value)
                 .OrderByDescending(o => o.CreatedDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var orders = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(orders);
         }

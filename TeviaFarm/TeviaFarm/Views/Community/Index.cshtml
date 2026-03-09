@@ -5,13 +5,31 @@
 
     int currentPage = ViewBag.CurrentPage ?? 1;
     int totalPages = ViewBag.TotalPages ?? 1;
+
+    if (TempData["Message"] != null)
+    {
+        TempData["ToastMessage"] = TempData["Message"];
+        TempData["ToastType"] = "success";
+    }
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Bài viết cộng đồng</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Cộng đồng</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Bài viết cộng đồng</h2>
+        <div class="text-muted small">Chia sẻ kinh nghiệm, hỏi đáp và cập nhật từ nông hộ.</div>
+    </div>
     @if (isLoggedIn)
     {
-        <a asp-action="Create" class="btn btn-success">Tạo bài viết</a>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-plus-lg me-1"></i>Tạo bài viết
+        </a>
     }
 </div>
 
@@ -24,28 +42,39 @@
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info">
-        Chưa có bài viết nào.
+    <div class="card card-hover">
+        <div class="card-body p-4 p-lg-5 text-center">
+            <div class="display-6 mb-2"><i class="bi bi-chat-square-text text-success"></i></div>
+            <h3 class="h5 page-title mb-2">Chưa có bài viết nào</h3>
+            <p class="text-muted mb-0">Hãy là người đầu tiên chia sẻ kinh nghiệm chăn nuôi của bạn.</p>
+        </div>
     </div>
 }
 else
 {
     @foreach (var p in Model)
     {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@p.Title</h5>
-                <p class="card-text text-truncate">@p.Content</p>
-                <small class="text-muted">
-                    @p.CreatedDate
-                    @if (p.User != null)
-                    {
-                        <span> - bởi @p.User.Username</span>
-                    }
-                </small>
-                <div class="mt-2">
-                    <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-link btn-sm">Xem chi tiết</a>
+        <div class="card mb-3 card-hover">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div>
+                        <h5 class="card-title mb-1">@p.Title</h5>
+                        <div class="text-muted small">
+                            <i class="bi bi-calendar3 me-1"></i>@p.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                            @if (p.User != null)
+                            {
+                                <span class="ms-2"><i class="bi bi-person-circle me-1"></i>@p.User.Username</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="text-success fs-4"><i class="bi bi-chat-dots"></i></div>
                 </div>
+
+                <p class="card-text text-muted line-clamp-2 mt-3 mb-3">@p.Content</p>
+
+                <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-eye me-1"></i>Xem chi tiết
+                </a>
             </div>
         </div>
     }

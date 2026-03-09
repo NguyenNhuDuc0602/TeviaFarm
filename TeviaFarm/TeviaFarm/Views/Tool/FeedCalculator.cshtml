@@ -23,9 +23,9 @@
         <label class="form-label">Giai đoạn phát triển</label>
         <select name="growthStage" class="form-select" required>
             <option value="">-- Chọn giai đoạn --</option>
-            <option value="Starter">Starter</option>
-            <option value="Grower">Grower</option>
-            <option value="Finisher">Finisher</option>
+            <option value="Starter">Heo con</option>
+            <option value="Grower">Heo đang lớn</option>
+            <option value="Finisher">Heo xuất chuồng</option>
         </select>
     </div>
 
@@ -44,4 +44,10 @@
         <li class="list-group-item"><strong>Bột trà xanh:</strong> @ViewBag.GreenTeaPowder kg</li>
         <li class="list-group-item"><strong>Tỷ lệ trộn:</strong> @ViewBag.MixingRatio</li>
     </ul>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

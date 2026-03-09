@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -153,6 +153,8 @@ namespace TeviaFarm.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                TempData["ToastMessage"] = "Đặt hàng thành công.";
+                TempData["ToastType"] = "success";
                 return RedirectToAction("Success", new { id = order.OrderId });
             }
             catch
@@ -189,7 +191,7 @@ namespace TeviaFarm.Controllers
             return View(order);
         }
 
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History(int page = 1)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -197,12 +199,28 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var orders = await _context.Orders
+            const int pageSize = 10;
+
+            var query = _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(d => d.Product)
                 .Where(o => o.UserId == userId.Value)
                 .OrderByDescending(o => o.OrderDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var orders = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(orders);
         }

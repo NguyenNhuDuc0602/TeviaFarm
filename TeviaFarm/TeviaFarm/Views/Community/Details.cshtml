@@ -3,16 +3,42 @@
     ViewData["Title"] = "Chi tiết bài viết";
 }
 
-<div class="card">
-    <div class="card-body">
-        <h3 class="card-title">@Model.Title</h3>
-        <p class="card-text">@Model.Content</p>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Community" asp-action="Index">Cộng đồng</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+    </ol>
+</nav>
+
+<div class="card card-hover">
+    <div class="card-body p-4 p-lg-5">
+        <div class="d-flex align-items-start justify-content-between gap-2">
+            <div>
+                <h1 class="h3 page-title mb-2">@Model.Title</h1>
+                <div class="text-muted small">
+                    <i class="bi bi-calendar3 me-1"></i>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                </div>
+            </div>
+            <div class="text-success fs-3"><i class="bi bi-chat-square-text"></i></div>
+        </div>
+
         @if (!string.IsNullOrEmpty(Model.ImageUrl))
         {
-            <img src="@Model.ImageUrl" class="img-fluid rounded" alt="@Model.Title" />
+            <div class="mt-3">
+                <img src="@Model.ImageUrl" class="img-fluid rounded-4 border" alt="@Model.Title" />
+            </div>
         }
-        <p class="mt-3 text-muted">Ngày tạo: @Model.CreatedDate</p>
-        <a asp-action="Index" class="btn btn-link">← Quay lại danh sách</a>
+
+        <div class="mt-4">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Content</p>
+        </div>
+
+        <div class="mt-4">
+            <a asp-action="Index" class="btn btn-outline-success">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+        </div>
     </div>
 </div>
 

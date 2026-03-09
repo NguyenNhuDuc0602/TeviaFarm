@@ -48,15 +48,23 @@ namespace TeviaFarm.Controllers
                 _ => 0.04m
             };
 
+            string growthStageDisplay = growthStage switch
+            {
+                "Starter" => "Heo con",
+                "Grower" => "Heo đang lớn",
+                "Finisher" => "Heo xuất chuồng",
+                _ => growthStage
+            };
+
             var totalFeed = numberOfPigs * averageWeight * baseFeedPerKg;
             var greenTeaPowder = totalFeed * 0.03m;
 
             ViewBag.NumberOfPigs = numberOfPigs;
             ViewBag.AverageWeight = averageWeight;
-            ViewBag.GrowthStage = growthStage;
+            ViewBag.GrowthStage = growthStageDisplay;
             ViewBag.TotalFeed = totalFeed;
             ViewBag.GreenTeaPowder = greenTeaPowder;
-            ViewBag.MixingRatio = "3% green tea powder, 97% feed";
+            ViewBag.MixingRatio = "3% bột trà xanh, 97% cám";
 
             return View();
         }

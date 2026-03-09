@@ -1,13 +1,30 @@
 @model IEnumerable<TeviaFarm.Models.User>
 @{
     ViewData["Title"] = "Quản lý người dùng";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
 }
 
-<h2 class="mb-3">Quản lý người dùng</h2>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-controller="Admin" asp-action="Index">Quản trị</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Người dùng</li>
+    </ol>
+</nav>
 
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
-        <thead>
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-1">Quản lý người dùng</h2>
+        <div class="text-muted small">Danh sách tài khoản và vai trò hệ thống.</div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+        <thead class="table-light">
             <tr>
                 <th>ID</th>
                 <th>Tên đăng nhập</th>
@@ -23,11 +40,42 @@
                 <td>@u.UserId</td>
                 <td class="fw-semibold">@u.Username</td>
                 <td>@u.Email</td>
-                <td>@u.Role</td>
-                <td>@u.CreatedDate</td>
+                <td>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="bi bi-person-badge me-1"></i>@u.Role
+                    </span>
+                </td>
+                <td>@u.CreatedDate.ToString("dd/MM/yyyy")</td>
             </tr>
         }
         </tbody>
-    </table>
+        </table>
+    </div>
 </div>
+
+@if (totalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Users" asp-route-page="@(currentPage - 1)">
+                    Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="Users" asp-route-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Users" asp-route-page="@(currentPage + 1)">
+                    Sau
+                </a>
+            </li>
+        </ul>
+    </nav>
+}
 

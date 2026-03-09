@@ -9,6 +9,7 @@ namespace TeviaFarm.Controllers
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
+        private const int AdminPageSize = 10;
 
         public AdminController(AppDbContext context)
         {
@@ -20,9 +21,26 @@ namespace TeviaFarm.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Products()
+        public async Task<IActionResult> Products(int page = 1)
         {
-            var products = await _context.Products.ToListAsync();
+            var query = _context.Products
+                .OrderByDescending(p => p.ProductId)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / AdminPageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var products = await query
+                .Skip((page - 1) * AdminPageSize)
+                .Take(AdminPageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
             return View(products);
         }
 
@@ -42,6 +60,8 @@ namespace TeviaFarm.Controllers
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = "Đã thêm sản phẩm.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Products));
         }
 
@@ -64,6 +84,8 @@ namespace TeviaFarm.Controllers
 
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = "Đã cập nhật sản phẩm.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Products));
         }
 
@@ -76,18 +98,39 @@ namespace TeviaFarm.Controllers
             {
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "Đã xóa sản phẩm.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "Không tìm thấy sản phẩm để xóa.";
+                TempData["ToastType"] = "warning";
             }
 
             return RedirectToAction(nameof(Products));
         }
 
-        public async Task<IActionResult> Orders()
+        public async Task<IActionResult> Orders(int page = 1)
         {
-            var orders = await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(d => d.Product)
                 .OrderByDescending(o => o.OrderDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / AdminPageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var orders = await query
+                .Skip((page - 1) * AdminPageSize)
+                .Take(AdminPageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(orders);
         }
@@ -101,6 +144,8 @@ namespace TeviaFarm.Controllers
             var allowedStatuses = new[] { "Pending", "Shipping", "Completed", "Cancelled" };
             if (string.IsNullOrWhiteSpace(status) || !allowedStatuses.Contains(status))
             {
+                TempData["ToastMessage"] = "Trạng thái không hợp lệ.";
+                TempData["ToastType"] = "warning";
                 return RedirectToAction(nameof(Orders));
             }
 
@@ -109,22 +154,60 @@ namespace TeviaFarm.Controllers
             {
                 order.Status = status;
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id}.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "Không tìm thấy đơn hàng.";
+                TempData["ToastType"] = "warning";
             }
 
             return RedirectToAction(nameof(Orders));
         }
 
-        public async Task<IActionResult> Users()
+        public async Task<IActionResult> Users(int page = 1)
         {
-            var users = await _context.Users.ToListAsync();
+            var query = _context.Users
+                .OrderByDescending(u => u.CreatedDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / AdminPageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var users = await query
+                .Skip((page - 1) * AdminPageSize)
+                .Take(AdminPageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
             return View(users);
         }
 
-        public async Task<IActionResult> Posts()
+        public async Task<IActionResult> Posts(int page = 1)
         {
-            var posts = await _context.Posts
+            var query = _context.Posts
                 .OrderByDescending(p => p.CreatedDate)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalItems / AdminPageSize);
+
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var posts = await query
+                .Skip((page - 1) * AdminPageSize)
+                .Take(AdminPageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(posts);
         }
@@ -138,6 +221,13 @@ namespace TeviaFarm.Controllers
             {
                 post.IsApproved = true;
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "Đã duyệt bài viết.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "Không tìm thấy bài viết.";
+                TempData["ToastType"] = "warning";
             }
 
             return RedirectToAction(nameof(Posts));
@@ -152,6 +242,13 @@ namespace TeviaFarm.Controllers
             {
                 _context.Posts.Remove(post);
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "Đã xóa bài viết.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "Không tìm thấy bài viết để xóa.";
+                TempData["ToastType"] = "warning";
             }
 
             return RedirectToAction(nameof(Posts));
@@ -182,6 +279,8 @@ namespace TeviaFarm.Controllers
 
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = "Đã tạo khóa học.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Courses));
         }
 
@@ -205,6 +304,8 @@ namespace TeviaFarm.Controllers
 
             _context.Lessons.Add(lesson);
             await _context.SaveChangesAsync();
+            TempData["ToastMessage"] = "Đã thêm bài học.";
+            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Courses));
         }
     }
