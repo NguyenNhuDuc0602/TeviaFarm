@@ -90,7 +90,7 @@ namespace TeviaFarm.Controllers
 
             if (string.IsNullOrWhiteSpace(shippingAddress))
             {
-                ModelState.AddModelError(string.Empty, "Vui lòng nhập địa chỉ giao hàng.");
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ địa chỉ giao hàng.");
             }
             else if (shippingAddress.Length > 255)
             {
@@ -136,6 +136,10 @@ namespace TeviaFarm.Controllers
                     ? OrderStatuses.PendingPayment
                     : OrderStatuses.Pending;
 
+                var txnRef = paymentMethod == "VnPay"
+                    ? $"ORD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}"
+                    : null;
+
                 var order = new Models.Order
                 {
                     UserId = userId.Value,
@@ -144,7 +148,8 @@ namespace TeviaFarm.Controllers
                     Status = orderStatus,
                     PaymentStatus = paymentMethod == "VnPay" ? "Pending" : "Unpaid",
                     OrderDate = DateTime.UtcNow,
-                    TotalAmount = cart.Items.Sum(i => i.Product!.Price * i.Quantity)
+                    TotalAmount = cart.Items.Sum(i => i.Product!.Price * i.Quantity),
+                    VnpTxnRef = txnRef
                 };
 
                 foreach (var item in cart.Items)
@@ -156,7 +161,6 @@ namespace TeviaFarm.Controllers
                         Price = item.Product!.Price
                     });
 
-                    // Giữ logic hiện tại của bạn: trừ kho ngay khi tạo đơn
                     item.Product.Stock -= item.Quantity;
                 }
 
@@ -168,10 +172,6 @@ namespace TeviaFarm.Controllers
 
                 if (paymentMethod == "VnPay")
                 {
-                    var txnRef = $"ORD{order.OrderId}_{DateTime.Now:yyyyMMddHHmmss}";
-                    order.VnpTxnRef = txnRef;
-                    await _context.SaveChangesAsync();
-
                     var vnpData = new SortedDictionary<string, string>
                     {
                         ["vnp_Version"] = "2.1.0",
@@ -185,7 +185,7 @@ namespace TeviaFarm.Controllers
                         ["vnp_OrderInfo"] = $"Thanh toan don hang {order.OrderId}",
                         ["vnp_OrderType"] = "other",
                         ["vnp_ReturnUrl"] = _config["VnPay:ReturnUrl"]!,
-                        ["vnp_TxnRef"] = txnRef,
+                        ["vnp_TxnRef"] = order.VnpTxnRef!,
                         ["vnp_ExpireDate"] = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss")
                     };
 
