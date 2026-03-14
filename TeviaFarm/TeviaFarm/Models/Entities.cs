@@ -27,6 +27,7 @@ namespace TeviaFarm.Models
 
         public ICollection<UserCourse> UserCourses { get; set; } = new List<UserCourse>();
         public ICollection<CourseOrder> CourseOrders { get; set; } = new List<CourseOrder>();
+        public ICollection<PostComment> PostComments { get; set; } = new List<PostComment>();
     }
 
     public class Product
@@ -51,6 +52,9 @@ namespace TeviaFarm.Models
         public string? ImageUrl { get; set; }
 
         public int? CategoryId { get; set; }
+
+        // Có thể dùng sau này để tính phí ship chuẩn hơn
+        public double? WeightKg { get; set; }
     }
 
     public class Cart
@@ -77,41 +81,75 @@ namespace TeviaFarm.Models
     public class Order
     {
         public int OrderId { get; set; }
-
         public int UserId { get; set; }
-        public User? User { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Tổng tiền phải lớn hơn hoặc bằng 0.")]
         public decimal TotalAmount { get; set; }
 
-        [Required(ErrorMessage = "Trạng thái đơn hàng không hợp lệ.")]
-        [StringLength(50, ErrorMessage = "Trạng thái đơn hàng không hợp lệ.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Tạm tính phải lớn hơn hoặc bằng 0.")]
+        public decimal SubtotalAmount { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Phí ship phải lớn hơn hoặc bằng 0.")]
+        public decimal ShippingFee { get; set; }
+
+        [Required(ErrorMessage = "Trạng thái đơn không hợp lệ.")]
+        [StringLength(50)]
         public string Status { get; set; } = "Pending";
 
-        [Required(ErrorMessage = "Địa chỉ giao hàng không được để trống.")]
-        [StringLength(255, MinimumLength = 5, ErrorMessage = "Địa chỉ giao hàng phải từ 5 đến 255 ký tự.")]
-        public string ShippingAddress { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Phương thức thanh toán không hợp lệ.")]
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } = "COD";
 
-        [StringLength(50, ErrorMessage = "Phương thức thanh toán không hợp lệ.")]
-        public string? PaymentMethod { get; set; } // COD, VnPay
-
-        [StringLength(20, ErrorMessage = "Trạng thái thanh toán không hợp lệ.")]
-        public string PaymentStatus { get; set; } = "Unpaid"; // Unpaid, Pending, Paid, Failed
-
-        [StringLength(100, ErrorMessage = "Mã tham chiếu VNPAY không hợp lệ.")]
-        public string? VnpTxnRef { get; set; }
-
-        [StringLength(100, ErrorMessage = "Mã giao dịch VNPAY không hợp lệ.")]
-        public string? VnpTransactionNo { get; set; }
+        [Required(ErrorMessage = "Trạng thái thanh toán không hợp lệ.")]
+        [StringLength(20)]
+        public string PaymentStatus { get; set; } = "Unpaid";
 
         [StringLength(10, ErrorMessage = "Mã phản hồi thanh toán không hợp lệ.")]
         public string? PaymentResponseCode { get; set; }
 
         public DateTime? PaymentDate { get; set; }
 
-        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+        [Required(ErrorMessage = "Địa chỉ giao hàng không được để trống.")]
+        [StringLength(500, ErrorMessage = "Địa chỉ giao hàng không được vượt quá 500 ký tự.")]
+        public string ShippingAddress { get; set; } = string.Empty;
 
-        public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+        [StringLength(100)]
+        public string ShippingWard { get; set; } = string.Empty;
+
+        [StringLength(100)]
+        public string ShippingDistrict { get; set; } = string.Empty;
+
+        [StringLength(100)]
+        public string ShippingProvince { get; set; } = string.Empty;
+
+        [StringLength(100)]
+        public string ReceiverName { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string ReceiverPhone { get; set; } = string.Empty;
+
+        [StringLength(100)]
+        public string? VnpTxnRef { get; set; }
+
+        [StringLength(100)]
+        public string? VnpTransactionNo { get; set; }
+
+        public DateTime? PaidAt { get; set; }
+
+        [StringLength(100)]
+        public string? GhtkLabel { get; set; }
+
+        [StringLength(100)]
+        public string? GhtkStatus { get; set; }
+
+        [StringLength(500)]
+        public string? GhtkTrackingUrl { get; set; }
+
+        public DateTime OrderDate { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public User User { get; set; } = null!;
+        public List<OrderDetail> OrderDetails { get; set; } = new();
     }
 
     public class OrderDetail
@@ -153,6 +191,24 @@ namespace TeviaFarm.Models
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         public bool IsApproved { get; set; } = false;
+        public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();
+    }
+
+    public class PostComment
+    {
+        public int PostCommentId { get; set; }
+
+        public int PostId { get; set; }
+        public Post? Post { get; set; }
+
+        public int UserId { get; set; }
+        public User? User { get; set; }
+
+        [Required(ErrorMessage = "Nội dung bình luận không được để trống.")]
+        [StringLength(1000, MinimumLength = 1, ErrorMessage = "Bình luận tối đa 1000 ký tự.")]
+        public string Content { get; set; } = string.Empty;
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     }
 
     public class Course
@@ -289,4 +345,51 @@ namespace TeviaFarm.Models
         public string Password { get; set; } = string.Empty;
     }
 
+    public class ProfileViewModel
+    {
+        public int UserId { get; set; }
+
+        [Required(ErrorMessage = "Tên đăng nhập không được để trống.")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Tên đăng nhập phải từ 3 đến 50 ký tự.")]
+        [RegularExpression(@"^[a-zA-Z0-9._]+$", ErrorMessage = "Tên đăng nhập chỉ được chứa chữ cái, số, dấu chấm và dấu gạch dưới.")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email không được để trống.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        [StringLength(254, ErrorMessage = "Email không được vượt quá 254 ký tự.")]
+        public string Email { get; set; } = string.Empty;
+
+        public string Role { get; set; } = string.Empty;
+
+        public DateTime CreatedDate { get; set; }
+
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu hiện tại phải từ 8 đến 100 ký tự.")]
+        [DataType(DataType.Password)]
+        public string? CurrentPassword { get; set; }
+
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu mới phải từ 8 đến 100 ký tự.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$", ErrorMessage = "Mật khẩu mới phải có ít nhất 1 chữ thường, 1 chữ hoa và 1 chữ số.")]
+        [DataType(DataType.Password)]
+        public string? NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Compare("NewPassword", ErrorMessage = "Xác nhận mật khẩu mới không khớp.")]
+        public string? ConfirmNewPassword { get; set; }
+    }
+    public class CommunityReaderViewModel
+    {
+        public Post? CurrentPost { get; set; }
+
+        public List<Post> LatestPosts { get; set; } = new();
+
+        public List<PostComment> Comments { get; set; } = new();
+
+        public int? PreviousPostId { get; set; }
+        public string? PreviousPostTitle { get; set; }
+
+        public int? NextPostId { get; set; }
+        public string? NextPostTitle { get; set; }
+
+        public string NewCommentContent { get; set; } = string.Empty;
+    }
 }

@@ -40,6 +40,12 @@ builder.Services.AddAuthorization();
 // Đăng ký service VNPAY
 builder.Services.AddSingleton<VnPayService>();
 
+// Đăng ký service GHTK
+builder.Services.AddHttpClient<IGhtkService, GhtkService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["GHTK:BaseUrl"]!);
+});
+
 var app = builder.Build();
 
 // Force Vietnamese culture for number/currency formatting

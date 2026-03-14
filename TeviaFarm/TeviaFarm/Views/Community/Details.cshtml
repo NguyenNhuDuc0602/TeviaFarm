@@ -1,44 +1,260 @@
 @model TeviaFarm.Models.Post
+@using System.Security.Claims
+
 @{
     ViewData["Title"] = "Chi tiết bài viết";
+
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var isOwner = User.Identity?.IsAuthenticated == true
+        && !string.IsNullOrEmpty(currentUserId)
+        && Model.UserId.ToString() == currentUserId;
+
+    var isAdmin = User.IsInRole("Admin");
+    var canDeletePost = isOwner || isAdmin;
+    var canComment = User.Identity?.IsAuthenticated == true;
+}
+
+@functions {
+    public string GetCategoryLabel(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return "Cộng đồng";
+
+        var t = title.ToLower();
+
+        if (t.Contains("heo") || t.Contains("lợn") || t.Contains("chăn nuôi"))
+            return "Chăn nuôi";
+
+        if (t.Contains("trà xanh") || t.Contains("bột trà"))
+            return "Nông sản xanh";
+
+        if (t.Contains("khẩu phần") || t.Contains("phối trộn"))
+            return "Kỹ thuật";
+
+        return "Cộng đồng";
+    }
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
         <li class="breadcrumb-item"><a asp-controller="Community" asp-action="Index">Cộng đồng</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+        <li class="breadcrumb-item active" aria-current="page">Chi tiết bài viết</li>
     </ol>
 </nav>
 
-<div class="card card-hover">
-    <div class="card-body p-4 p-lg-5">
-        <div class="d-flex align-items-start justify-content-between gap-2">
-            <div>
-                <h1 class="h3 page-title mb-2">@Model.Title</h1>
-                <div class="text-muted small">
-                    <i class="bi bi-calendar3 me-1"></i>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+<div class="community-detail-page">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="community-sidebar-card mb-4">
+                <div class="community-sidebar-title">Bài viết nổi bật</div>
+
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="@Model.Title" />
+                        }
+                        else
+                        {
+                            <div class="community-mini-post-placeholder">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">@Model.Title</div>
+                        <div class="community-mini-post-meta">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        <div class="community-mini-post-placeholder">
+                            <i class="bi bi-chat-square-text"></i>
+                        </div>
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">Chia sẻ kinh nghiệm chăn nuôi bền vững</div>
+                        <div class="community-mini-post-meta">Bài viết tham khảo</div>
+                    </div>
+                </div>
+
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        <div class="community-mini-post-placeholder">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">Kỹ thuật phối trộn khẩu phần với bột trà xanh</div>
+                        <div class="community-mini-post-meta">Bài viết tham khảo</div>
+                    </div>
                 </div>
             </div>
-            <div class="text-success fs-3"><i class="bi bi-chat-square-text"></i></div>
-        </div>
 
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
-        {
-            <div class="mt-3">
-                <img src="@Model.ImageUrl" class="img-fluid rounded-4 border" alt="@Model.Title" />
+            <div class="community-sidebar-card">
+                <div class="community-sidebar-title">Danh mục blog</div>
+                <ul class="community-category-list">
+                    <li><a href="#">Chăn nuôi</a></li>
+                    <li><a href="#">Nông sản xanh</a></li>
+                    <li><a href="#">Kỹ thuật</a></li>
+                    <li><a href="#">Kinh nghiệm nông hộ</a></li>
+                    <li><a href="#">Cộng đồng</a></li>
+                    <li><a href="#">Tin tức hệ thống</a></li>
+                </ul>
             </div>
-        }
-
-        <div class="mt-4">
-            <p class="mb-0" style="white-space: pre-wrap;">@Model.Content</p>
         </div>
 
-        <div class="mt-4">
-            <a asp-action="Index" class="btn btn-outline-success">
-                <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
-            </a>
+        <div class="col-lg-9">
+            <article class="community-article-card">
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <div class="community-hero-image-wrap">
+                        <img src="@Model.ImageUrl" class="community-hero-image" alt="@Model.Title" />
+                    </div>
+                }
+
+                <div class="community-article-body">
+                    <div class="community-article-category">@GetCategoryLabel(Model.Title)</div>
+
+                    <h1 class="community-article-title">@Model.Title</h1>
+
+                    <div class="community-article-meta">
+                        <span><i class="bi bi-person-circle me-1"></i>@(Model.User?.Username ?? "Tác giả")</span>
+                        <span><i class="bi bi-calendar3 me-1"></i>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                        <span><i class="bi bi-folder2-open me-1"></i>@GetCategoryLabel(Model.Title)</span>
+                    </div>
+
+                    @if (!Model.IsApproved && isOwner)
+                    {
+                        <div class="alert alert-warning mt-3 mb-4">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Bài viết này hiện đang chờ quản trị viên duyệt.
+                        </div>
+                    }
+
+                    <div class="community-article-intro">
+                        Chia sẻ kiến thức, kinh nghiệm và góc nhìn thực tế từ cộng đồng nông hộ và người quan tâm đến mô hình nông nghiệp bền vững.
+                    </div>
+
+                    <div class="community-article-content">
+                        @foreach (var paragraph in (Model.Content ?? string.Empty)
+                                                .Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.None)
+                                                .Where(x => !string.IsNullOrWhiteSpace(x)))
+                        {
+                            <p>@paragraph</p>
+                        }
+                    </div>
+
+                    <div class="community-tags">
+                        <span class="community-tag">#teviafarm</span>
+                        <span class="community-tag">#congdong</span>
+                        <span class="community-tag">#nongsanxanh</span>
+                        <span class="community-tag">#channuoi</span>
+                    </div>
+
+                    <div class="community-article-nav d-flex flex-wrap gap-2">
+                        <a asp-action="Index" class="btn btn-outline-success">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                        </a>
+
+                        @if (isOwner)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.PostId" class="btn btn-success">
+                                <i class="bi bi-pencil-square me-1"></i>Sửa bài viết
+                            </a>
+                        }
+
+                        @if (canDeletePost)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline"
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa bài viết này không?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.PostId" />
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-trash me-1"></i>Xóa bài viết
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </article>
+
+            <section class="community-comment-card mt-4">
+                <div class="community-comment-title">Viết bình luận</div>
+
+                @if (canComment)
+                {
+                    <form asp-action="AddComment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="postId" value="@Model.PostId" />
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <textarea name="content" class="form-control" rows="5" placeholder="Viết bình luận..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">Gửi bình luận</button>
+                            </div>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="community-comment-empty">
+                        Bạn cần đăng nhập để bình luận bài viết này.
+                    </div>
+                }
+            </section>
+
+            <section class="community-comment-card mt-4">
+                <div class="community-comment-title">Bình luận</div>
+
+                @if (Model.Comments != null && Model.Comments.Any())
+                {
+                    <div class="community-comment-list">
+                        @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedDate))
+                        {
+                            var isCommentOwner = User.Identity?.IsAuthenticated == true
+                            && !string.IsNullOrEmpty(currentUserId)
+                            && comment.UserId.ToString() == currentUserId;
+
+                            var canDeleteComment = isCommentOwner || isAdmin;
+
+                            <div class="community-comment-item">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <div class="fw-semibold">@(comment.User?.Username ?? "Người dùng")</div>
+                                        <div class="text-muted small mb-2">@comment.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+
+                                    @if (canDeleteComment)
+                                    {
+                                        <form asp-action="DeleteComment" method="post"
+                                              onsubmit="return confirm('Bạn có chắc muốn xóa bình luận này không?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@comment.PostCommentId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+
+                                <div class="community-comment-content">
+                                    @comment.Content
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="community-comment-empty">
+                        Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ ý kiến về bài viết này.
+                    </div>
+                }
+            </section>
         </div>
     </div>
 </div>
-

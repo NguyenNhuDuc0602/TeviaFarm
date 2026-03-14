@@ -16,6 +16,7 @@ namespace TeviaFarm.Data
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
         public DbSet<Post> Posts => Set<Post>();
+        public DbSet<PostComment> PostComments => Set<PostComment>();
         public DbSet<Course> Courses => Set<Course>();
         public DbSet<Lesson> Lessons => Set<Lesson>();
         public DbSet<UserCourse> UserCourses => Set<UserCourse>();
@@ -73,6 +74,18 @@ namespace TeviaFarm.Data
                 .WithMany(c => c.CourseOrderDetails)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostComment>()
+                .HasOne(pc => pc.Post)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(pc => pc.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostComment>()
+                .HasOne(pc => pc.User)
+                .WithMany(u => u.PostComments)
+                .HasForeignKey(pc => pc.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

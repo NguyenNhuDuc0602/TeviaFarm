@@ -2,52 +2,67 @@
     ViewData["Title"] = "Công cụ tính khẩu phần";
 }
 
-<h2>Công cụ tính khẩu phần</h2>
+<div class="feed-calculator-page">
+    <div class="feed-calculator-card">
+        <div class="feed-calculator-header">
+            <span class="feed-calculator-badge">Công cụ chăn nuôi</span>
+            <h1 class="feed-calculator-title">Công cụ tính khẩu phần</h1>
+            <p class="feed-calculator-subtitle">
+                Tính nhanh lượng bột trà xanh và cám cho đàn heo theo số lượng, khối lượng và giai đoạn phát triển.
+            </p>
+        </div>
 
-<div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <form asp-controller="Tool" asp-action="FeedCalculator" method="post" class="feed-calculator-form">
+            @Html.AntiForgeryToken()
 
-<form asp-action="FeedCalculator" method="post">
-    @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label">Số lượng heo</label>
+                <input type="number" name="pigCount" class="form-control" min="1" required />
+            </div>
 
-    <div class="mb-3">
-        <label class="form-label">Số lượng heo</label>
-        <input type="number" name="numberOfPigs" class="form-control" min="1" required />
+            <div class="mb-3">
+                <label class="form-label">Khối lượng trung bình mỗi con (kg)</label>
+                <input type="number" name="averageWeight" class="form-control" min="1" step="0.1" required />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Giai đoạn phát triển</label>
+                <select name="stage" class="form-select" required>
+                    <option value="">-- Chọn giai đoạn --</option>
+                    <option value="piglet">Heo con</option>
+                    <option value="growing">Heo thịt đang lớn</option>
+                    <option value="finishing">Heo xuất chuồng</option>
+                </select>
+            </div>
+
+            <div class="feed-calculator-actions">
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-calculator me-2"></i>Tính toán
+                </button>
+            </div>
+        </form>
+
+        @if (ViewBag.Result != null)
+        {
+            if ((string)ViewBag.Result == "ok")
+            {
+                <div class="feed-result-box mt-4">
+                    <div class="feed-result-title">
+                        <i class="bi bi-bar-chart-line me-2"></i>Kết quả tính toán
+                    </div>
+                    <div class="feed-result-content">
+                        <p class="mb-2"><strong>Tổng lượng thức ăn:</strong> @ViewBag.TotalFeed kg/ngày</p>
+                        <p class="mb-2"><strong>Lượng bột trà xanh:</strong> @ViewBag.GreenTeaAmount kg/ngày</p>
+                        <p class="mb-0"><strong>Lượng cám còn lại:</strong> @ViewBag.NormalFeedAmount kg/ngày</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning mt-4">
+                    @ViewBag.Result
+                </div>
+            }
+        }
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">Khối lượng trung bình mỗi con (kg)</label>
-        <input type="number" name="averageWeight" class="form-control" min="0.1" step="0.1" required />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Giai đoạn phát triển</label>
-        <select name="growthStage" class="form-select" required>
-            <option value="">-- Chọn giai đoạn --</option>
-            <option value="Starter">Heo con</option>
-            <option value="Grower">Heo đang lớn</option>
-            <option value="Finisher">Heo xuất chuồng</option>
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-success">Tính toán</button>
-</form>
-
-@if (ViewBag.TotalFeed != null)
-{
-    <hr />
-    <h4>Kết quả</h4>
-    <ul class="list-group">
-        <li class="list-group-item"><strong>Số lượng heo:</strong> @ViewBag.NumberOfPigs</li>
-        <li class="list-group-item"><strong>Khối lượng trung bình:</strong> @ViewBag.AverageWeight kg</li>
-        <li class="list-group-item"><strong>Giai đoạn:</strong> @ViewBag.GrowthStage</li>
-        <li class="list-group-item"><strong>Tổng lượng cám:</strong> @ViewBag.TotalFeed kg</li>
-        <li class="list-group-item"><strong>Bột trà xanh:</strong> @ViewBag.GreenTeaPowder kg</li>
-        <li class="list-group-item"><strong>Tỷ lệ trộn:</strong> @ViewBag.MixingRatio</li>
-    </ul>
-}
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+</div>

@@ -43,6 +43,22 @@
             _ => paymentMethod ?? ""
         };
     }
+
+    public string GetGhtkStatusBadgeClass(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return "bg-secondary-subtle text-secondary border border-secondary-subtle";
+
+        var s = status.Trim().ToLower();
+
+        if (s.Contains("created") || s.Contains("success") || s.Contains("thành công"))
+            return "bg-success-subtle text-success border border-success-subtle";
+
+        if (s.Contains("failed") || s.Contains("error") || s.Contains("không") || s.Contains("sync failed"))
+            return "bg-warning-subtle text-warning border border-warning-subtle";
+
+        return "bg-info-subtle text-info border border-info-subtle";
+    }
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -71,6 +87,8 @@
                     <th>Trạng thái</th>
                     <th>Tổng tiền</th>
                     <th>Địa chỉ giao</th>
+                    <th>Mã GHTK</th>
+                    <th>Trạng thái GHTK</th>
                     <th class="text-end">Cập nhật</th>
                 </tr>
             </thead>
@@ -87,7 +105,43 @@
                             <span class="badge @GetStatusBadgeClass(o.Status)">@GetStatusText(o.Status)</span>
                         </td>
                         <td class="fw-semibold text-success">@o.TotalAmount.ToString("N0") đ</td>
-                        <td>@o.ShippingAddress</td>
+                        <td>
+                            <div>@o.ShippingAddress</div>
+
+                            @if (!string.IsNullOrWhiteSpace(o.ShippingWard) ||
+                                                    !string.IsNullOrWhiteSpace(o.ShippingDistrict) ||
+                                                    !string.IsNullOrWhiteSpace(o.ShippingProvince))
+                            {
+                        <div class="text-muted small">
+                            @string.Join(", ", new[] { o.ShippingWard, o.ShippingDistrict, o.ShippingProvince }
+                                                        .Where(x => !string.IsNullOrWhiteSpace(x)))
+                        </div>
+                                                }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(o.GhtkLabel))
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    @o.GhtkLabel
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Chưa có</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(o.GhtkStatus))
+                            {
+                                <span class="badge @GetGhtkStatusBadgeClass(o.GhtkStatus)">
+                                    @o.GhtkStatus
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Chưa đồng bộ</span>
+                            }
+                        </td>
                         <td class="text-end">
                             <form asp-action="UpdateOrderStatus" method="post" class="d-flex justify-content-end gap-2 flex-wrap">
                                 @Html.AntiForgeryToken()

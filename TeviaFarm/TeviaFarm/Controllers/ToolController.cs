@@ -1,9 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TeviaFarm.Controllers
 {
-    [Authorize]
     public class ToolController : Controller
     {
         [HttpGet]
@@ -14,57 +12,45 @@ namespace TeviaFarm.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult FeedCalculator(int numberOfPigs, decimal averageWeight, string growthStage)
+        public IActionResult FeedCalculator(int pigCount, double averageWeight, string stage)
         {
-            growthStage = growthStage?.Trim() ?? "";
-
-            var allowedStages = new[] { "Starter", "Grower", "Finisher" };
-
-            if (numberOfPigs <= 0)
+            if (pigCount <= 0 || averageWeight <= 0 || string.IsNullOrWhiteSpace(stage))
             {
-                ModelState.AddModelError(string.Empty, "Số lượng heo phải lớn hơn 0.");
-            }
-
-            if (averageWeight <= 0)
-            {
-                ModelState.AddModelError(string.Empty, "Khối lượng trung bình phải lớn hơn 0.");
-            }
-
-            if (string.IsNullOrWhiteSpace(growthStage) || !allowedStages.Contains(growthStage))
-            {
-                ModelState.AddModelError(string.Empty, "Giai đoạn phát triển không hợp lệ.");
-            }
-
-            if (!ModelState.IsValid)
-            {
+                ViewBag.Result = "Vui lòng nhập đầy đủ và hợp lệ tất cả thông tin.";
                 return View();
             }
 
-            decimal baseFeedPerKg = growthStage switch
+            double feedRate;
+            double greenTeaRate;
+
+            switch (stage)
             {
-                "Starter" => 0.05m,
-                "Grower" => 0.04m,
-                "Finisher" => 0.03m,
-                _ => 0.04m
-            };
+                case "piglet":
+                    feedRate = 0.05;      // 5% khối lượng cơ thể
+                    greenTeaRate = 0.03;  // 3% trong khẩu phần
+                    break;
+                case "growing":
+                    feedRate = 0.04;
+                    greenTeaRate = 0.05;
+                    break;
+                case "finishing":
+                    feedRate = 0.035;
+                    greenTeaRate = 0.04;
+                    break;
+                default:
+                    ViewBag.Result = "Giai đoạn phát triển không hợp lệ.";
+                    return View();
+            }
 
-            string growthStageDisplay = growthStage switch
-            {
-                "Starter" => "Heo con",
-                "Grower" => "Heo đang lớn",
-                "Finisher" => "Heo xuất chuồng",
-                _ => growthStage
-            };
+            double totalWeight = pigCount * averageWeight;
+            double totalFeed = totalWeight * feedRate;
+            double greenTeaAmount = totalFeed * greenTeaRate;
+            double normalFeedAmount = totalFeed - greenTeaAmount;
 
-            var totalFeed = numberOfPigs * averageWeight * baseFeedPerKg;
-            var greenTeaPowder = totalFeed * 0.03m;
-
-            ViewBag.NumberOfPigs = numberOfPigs;
-            ViewBag.AverageWeight = averageWeight;
-            ViewBag.GrowthStage = growthStageDisplay;
-            ViewBag.TotalFeed = totalFeed;
-            ViewBag.GreenTeaPowder = greenTeaPowder;
-            ViewBag.MixingRatio = "3% bột trà xanh, 97% cám";
+            ViewBag.TotalFeed = totalFeed.ToString("0.##");
+            ViewBag.GreenTeaAmount = greenTeaAmount.ToString("0.##");
+            ViewBag.NormalFeedAmount = normalFeedAmount.ToString("0.##");
+            ViewBag.Result = "ok";
 
             return View();
         }
