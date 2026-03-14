@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
+using TeviaFarm.Models;
 using TeviaFarm.Services;
 
 namespace TeviaFarm.Controllers
@@ -13,6 +14,7 @@ namespace TeviaFarm.Controllers
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
         private readonly VnPayService _vnPayService;
+        private readonly IGhtkService _ghtkService;
 
         private static class OrderStatuses
         {
@@ -23,11 +25,16 @@ namespace TeviaFarm.Controllers
             public const string Cancelled = "Cancelled";
         }
 
-        public OrderController(AppDbContext context, IConfiguration config, VnPayService vnPayService)
+        public OrderController(
+            AppDbContext context,
+            IConfiguration config,
+            VnPayService vnPayService,
+            IGhtkService ghtkService)
         {
             _context = context;
             _config = config;
             _vnPayService = vnPayService;
+            _ghtkService = ghtkService;
         }
 
         private int? GetCurrentUserId()
@@ -60,12 +67,71 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction("Index", "Cart");
             }
 
-            return View(cart);
+            var subtotal = cart.Items.Sum(i => i.Quantity * (i.Product != null ? i.Product.Price : 0));
+
+            var model = new CheckoutViewModel
+            {
+                SubtotalAmount = subtotal,
+                ShippingFee = 0,
+                TotalAmount = subtotal,
+                PaymentMethod = "COD"
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CalculateShippingFee([FromBody] ShippingFeeRequest model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Bạn chưa đăng nhập." });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ShippingProvince) || string.IsNullOrWhiteSpace(model.ShippingDistrict))
+            {
+                return BadRequest(new { message = "Vui lòng nhập tỉnh/thành và quận/huyện." });
+            }
+
+            var cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+
+            if (cart == null || !cart.Items.Any())
+            {
+                return BadRequest(new { message = "Giỏ hàng trống." });
+            }
+
+            var subtotal = cart.Items.Sum(i => i.Quantity * (i.Product != null ? i.Product.Price : 0));
+
+            // Nếu chưa có WeightKg thì tạm tính mặc định 0.5kg / mỗi sản phẩm
+            double totalWeightKg = cart.Items.Sum(i => i.Quantity * ((i.Product?.WeightKg) ?? 0.5));
+
+            var shippingFee = await _ghtkService.CalculateShippingFeeAsync(
+                model.ShippingProvince.Trim(),
+                model.ShippingDistrict.Trim(),
+                totalWeightKg,
+                subtotal
+            );
+
+            if (shippingFee == null)
+            {
+                return BadRequest(new { message = "Không lấy được phí vận chuyển từ GHTK." });
+            }
+
+            return Json(new
+            {
+                subtotal,
+                shippingFee = shippingFee.Value,
+                total = subtotal + shippingFee.Value
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(string shippingAddress, string? paymentMethod)
+        public async Task<IActionResult> Checkout(CheckoutViewModel model)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -73,8 +139,13 @@ namespace TeviaFarm.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            shippingAddress = shippingAddress?.Trim() ?? "";
-            paymentMethod = paymentMethod?.Trim() ?? "";
+            model.ReceiverName = model.ReceiverName?.Trim() ?? "";
+            model.ReceiverPhone = model.ReceiverPhone?.Trim() ?? "";
+            model.ShippingAddress = model.ShippingAddress?.Trim() ?? "";
+            model.ShippingWard = model.ShippingWard?.Trim() ?? "";
+            model.ShippingDistrict = model.ShippingDistrict?.Trim() ?? "";
+            model.ShippingProvince = model.ShippingProvince?.Trim() ?? "";
+            model.PaymentMethod = model.PaymentMethod?.Trim() ?? "";
 
             var cart = await _context.Carts
                 .Include(c => c.Items)
@@ -88,18 +159,39 @@ namespace TeviaFarm.Controllers
 
             var allowedPaymentMethods = new[] { "COD", "VnPay" };
 
-            if (string.IsNullOrWhiteSpace(shippingAddress))
+            if (string.IsNullOrWhiteSpace(model.ReceiverName))
             {
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ địa chỉ giao hàng.");
-            }
-            else if (shippingAddress.Length > 255)
-            {
-                ModelState.AddModelError(string.Empty, "Địa chỉ giao hàng không được vượt quá 255 ký tự.");
+                ModelState.AddModelError(nameof(model.ReceiverName), "Vui lòng nhập họ tên người nhận.");
             }
 
-            if (string.IsNullOrWhiteSpace(paymentMethod) || !allowedPaymentMethods.Contains(paymentMethod))
+            if (string.IsNullOrWhiteSpace(model.ReceiverPhone))
             {
-                ModelState.AddModelError(string.Empty, "Phương thức thanh toán không hợp lệ.");
+                ModelState.AddModelError(nameof(model.ReceiverPhone), "Vui lòng nhập số điện thoại người nhận.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ShippingAddress))
+            {
+                ModelState.AddModelError(nameof(model.ShippingAddress), "Vui lòng nhập địa chỉ chi tiết.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ShippingWard))
+            {
+                ModelState.AddModelError(nameof(model.ShippingWard), "Vui lòng nhập phường/xã.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ShippingDistrict))
+            {
+                ModelState.AddModelError(nameof(model.ShippingDistrict), "Vui lòng nhập quận/huyện.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ShippingProvince))
+            {
+                ModelState.AddModelError(nameof(model.ShippingProvince), "Vui lòng nhập tỉnh/thành phố.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.PaymentMethod) || !allowedPaymentMethods.Contains(model.PaymentMethod))
+            {
+                ModelState.AddModelError(nameof(model.PaymentMethod), "Phương thức thanh toán không hợp lệ.");
             }
 
             foreach (var item in cart.Items)
@@ -123,38 +215,70 @@ namespace TeviaFarm.Controllers
                 }
             }
 
+            var subtotal = cart.Items.Sum(i => i.Quantity * (i.Product != null ? i.Product.Price : 0));
+            model.SubtotalAmount = subtotal;
+            model.TotalAmount = subtotal;
+
             if (!ModelState.IsValid)
             {
-                return View(cart);
+                return View(model);
             }
+
+            double totalWeightKg = cart.Items.Sum(i => i.Quantity * ((i.Product?.WeightKg) ?? 0.5));
+
+            var shippingFee = await _ghtkService.CalculateShippingFeeAsync(
+                model.ShippingProvince,
+                model.ShippingDistrict,
+                totalWeightKg,
+                subtotal
+            );
+
+            if (shippingFee == null)
+            {
+                ModelState.AddModelError(string.Empty, "Không lấy được phí vận chuyển từ GHTK.");
+                model.ShippingFee = 0;
+                model.TotalAmount = subtotal;
+                return View(model);
+            }
+
+            model.ShippingFee = shippingFee.Value;
+            model.TotalAmount = subtotal + shippingFee.Value;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                var orderStatus = paymentMethod == "VnPay"
+                var orderStatus = model.PaymentMethod == "VnPay"
                     ? OrderStatuses.PendingPayment
                     : OrderStatuses.Pending;
 
-                var txnRef = paymentMethod == "VnPay"
+                var txnRef = model.PaymentMethod == "VnPay"
                     ? $"ORD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}"
                     : null;
 
-                var order = new Models.Order
+                var order = new Order
                 {
                     UserId = userId.Value,
-                    ShippingAddress = shippingAddress,
-                    PaymentMethod = paymentMethod,
+                    ReceiverName = model.ReceiverName,
+                    ReceiverPhone = model.ReceiverPhone,
+                    ShippingAddress = model.ShippingAddress,
+                    ShippingWard = model.ShippingWard,
+                    ShippingDistrict = model.ShippingDistrict,
+                    ShippingProvince = model.ShippingProvince,
+                    PaymentMethod = model.PaymentMethod,
                     Status = orderStatus,
-                    PaymentStatus = paymentMethod == "VnPay" ? "Pending" : "Unpaid",
+                    PaymentStatus = model.PaymentMethod == "VnPay" ? "Pending" : "Unpaid",
                     OrderDate = DateTime.UtcNow,
-                    TotalAmount = cart.Items.Sum(i => i.Product!.Price * i.Quantity),
+                    CreatedAt = DateTime.UtcNow,
+                    SubtotalAmount = subtotal,
+                    ShippingFee = shippingFee.Value,
+                    TotalAmount = subtotal + shippingFee.Value,
                     VnpTxnRef = txnRef
                 };
 
                 foreach (var item in cart.Items)
                 {
-                    order.OrderDetails.Add(new Models.OrderDetail
+                    order.OrderDetails.Add(new OrderDetail
                     {
                         ProductId = item.ProductId,
                         Quantity = item.Quantity,
@@ -170,7 +294,7 @@ namespace TeviaFarm.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                if (paymentMethod == "VnPay")
+                if (model.PaymentMethod == "VnPay")
                 {
                     var vnpData = new SortedDictionary<string, string>
                     {
@@ -205,7 +329,7 @@ namespace TeviaFarm.Controllers
             {
                 await transaction.RollbackAsync();
                 ModelState.AddModelError(string.Empty, "Đặt hàng thất bại. Vui lòng thử lại.");
-                return View(cart);
+                return View(model);
             }
         }
 

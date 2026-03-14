@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeviaFarm.Data;
+using TeviaFarm.Models;
+using TeviaFarm.Services;
 
 namespace TeviaFarm.Controllers
 {
@@ -9,16 +11,56 @@ namespace TeviaFarm.Controllers
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IGhtkService _ghtkService;
         private const int AdminPageSize = 10;
 
-        public AdminController(AppDbContext context)
+        public AdminController(AppDbContext context, IGhtkService ghtkService)
         {
             _context = context;
+            _ghtkService = ghtkService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var totalOrders = await _context.Orders.CountAsync();
+
+            var productRevenue = await _context.Orders
+                .Where(o => o.Status == "Completed")
+                .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+
+            var totalCourseOrders = await _context.CourseOrders.CountAsync();
+
+            var courseRevenue = await _context.CourseOrders
+                .Where(o => o.Status == "Paid" || o.PaymentStatus == "Paid")
+                .SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+
+            var totalUsers = await _context.Users.CountAsync();
+
+            var pendingPosts = await _context.Posts.CountAsync(p => !p.IsApproved);
+
+            var latestOrders = await _context.Orders
+                .OrderByDescending(o => o.OrderDate)
+                .Take(5)
+                .ToListAsync();
+
+            var latestPosts = await _context.Posts
+                .OrderByDescending(p => p.CreatedDate)
+                .Take(5)
+                .ToListAsync();
+
+            var model = new AdminDashboardViewModel
+            {
+                TotalOrders = totalOrders,
+                ProductRevenue = productRevenue,
+                TotalCourseOrders = totalCourseOrders,
+                CourseRevenue = courseRevenue,
+                TotalUsers = totalUsers,
+                PendingPosts = pendingPosts,
+                LatestOrders = latestOrders,
+                LatestPosts = latestPosts
+            };
+
+            return View(model);
         }
 
         public async Task<IActionResult> Products(int page = 1)
@@ -51,7 +93,7 @@ namespace TeviaFarm.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateProduct(Models.Product product)
+        public async Task<IActionResult> CreateProduct(Product product)
         {
             if (!ModelState.IsValid)
             {
@@ -75,7 +117,7 @@ namespace TeviaFarm.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditProduct(Models.Product product)
+        public async Task<IActionResult> EditProduct(Product product)
         {
             if (!ModelState.IsValid)
             {
@@ -174,11 +216,35 @@ namespace TeviaFarm.Controllers
                 }
             }
 
+            if (status == "Shipping" && string.IsNullOrWhiteSpace(order.GhtkLabel))
+            {
+                var ghtkResult = await _ghtkService.CreateOrderAsync(order);
+
+                if (ghtkResult != null && ghtkResult.Success)
+                {
+                    order.GhtkLabel = ghtkResult.Order?.Label;
+                    order.GhtkStatus = ghtkResult.Message ?? "Created";
+
+                    TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id} và tạo đơn GHTK thành công.";
+                    TempData["ToastType"] = "success";
+                }
+                else
+                {
+                    order.GhtkStatus = ghtkResult?.Message ?? "GHTK sync failed";
+
+                    TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id} sang Đang giao, nhưng chưa đồng bộ được với GHTK.";
+                    TempData["ToastType"] = "warning";
+                }
+            }
+            else
+            {
+                TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id}.";
+                TempData["ToastType"] = "success";
+            }
+
             order.Status = status;
             await _context.SaveChangesAsync();
 
-            TempData["ToastMessage"] = $"Đã cập nhật trạng thái đơn #{id}.";
-            TempData["ToastType"] = "success";
             return RedirectToAction(nameof(Orders));
         }
 
@@ -341,7 +407,7 @@ namespace TeviaFarm.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateCourse(Models.Course course)
+        public async Task<IActionResult> CreateCourse(Course course)
         {
             if (!ModelState.IsValid)
             {
@@ -360,13 +426,13 @@ namespace TeviaFarm.Controllers
             var course = await _context.Courses.FindAsync(courseId);
             if (course == null) return NotFound();
 
-            var lesson = new Models.Lesson { CourseId = courseId };
+            var lesson = new Lesson { CourseId = courseId };
             return View(lesson);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateLesson(Models.Lesson lesson)
+        public async Task<IActionResult> CreateLesson(Lesson lesson)
         {
             if (!ModelState.IsValid)
             {

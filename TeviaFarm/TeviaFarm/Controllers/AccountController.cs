@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -117,6 +118,170 @@ namespace TeviaFarm.Controllers
                 return View(model);
             }
 
+            await SignInUserAsync(user);
+
+            TempData["ToastMessage"] = $"Đăng nhập thành công. Xin chào {user.Username}!";
+            TempData["ToastType"] = "success";
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId.Value);
+            if (user == null)
+            {
+                TempData["ToastMessage"] = "Không tìm thấy thông tin tài khoản.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var model = new ProfileViewModel
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                CreatedDate = user.CreatedDate
+            };
+
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ProfileViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            model.Username = (model.Username ?? "").Trim();
+            model.Email = (model.Email ?? "").Trim().ToLower();
+            model.CurrentPassword = (model.CurrentPassword ?? "").Trim();
+            model.NewPassword = (model.NewPassword ?? "").Trim();
+            model.ConfirmNewPassword = (model.ConfirmNewPassword ?? "").Trim();
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId.Value);
+            if (user == null)
+            {
+                TempData["ToastMessage"] = "Không tìm thấy thông tin tài khoản.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
+
+            model.UserId = user.UserId;
+            model.Role = user.Role;
+            model.CreatedDate = user.CreatedDate;
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            if (model.Username.Contains(" "))
+            {
+                ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập không được chứa khoảng trắng.");
+                return View(model);
+            }
+
+            var usernameExists = await _context.Users
+                .AnyAsync(u => u.UserId != user.UserId && u.Username.ToLower() == model.Username.ToLower());
+
+            if (usernameExists)
+            {
+                ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại.");
+                return View(model);
+            }
+
+            var emailExists = await _context.Users
+                .AnyAsync(u => u.UserId != user.UserId && u.Email.ToLower() == model.Email.ToLower());
+
+            if (emailExists)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email đã tồn tại.");
+                return View(model);
+            }
+
+            var isChangingPassword =
+                !string.IsNullOrWhiteSpace(model.CurrentPassword) ||
+                !string.IsNullOrWhiteSpace(model.NewPassword) ||
+                !string.IsNullOrWhiteSpace(model.ConfirmNewPassword);
+
+            if (isChangingPassword)
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Vui lòng nhập mật khẩu hiện tại.");
+                    return View(model);
+                }
+
+                if (string.IsNullOrWhiteSpace(model.NewPassword))
+                {
+                    ModelState.AddModelError(nameof(model.NewPassword), "Vui lòng nhập mật khẩu mới.");
+                    return View(model);
+                }
+
+                var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.Password, model.CurrentPassword);
+                if (verifyResult == PasswordVerificationResult.Failed)
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Mật khẩu hiện tại không đúng.");
+                    return View(model);
+                }
+
+                user.Password = _passwordHasher.HashPassword(user, model.NewPassword);
+            }
+
+            user.Username = model.Username;
+            user.Email = model.Email;
+
+            await _context.SaveChangesAsync();
+            await SignInUserAsync(user);
+
+            TempData["ToastMessage"] = "Cập nhật hồ sơ thành công.";
+            TempData["ToastType"] = "success";
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            TempData["ToastMessage"] = "Bạn không có quyền truy cập chức năng này.";
+            TempData["ToastType"] = "warning";
+            return View();
+        }
+
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+
+            TempData["ToastMessage"] = "Đăng xuất thành công.";
+            TempData["ToastType"] = "info";
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(value, out var userId) ? userId : null;
+        }
+
+        private async Task SignInUserAsync(User user)
+        {
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
@@ -139,30 +304,6 @@ namespace TeviaFarm.Controllers
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
-
-            TempData["ToastMessage"] = $"Đăng nhập thành công. Xin chào {user.Username}!";
-            TempData["ToastType"] = "success";
-
-            return RedirectToAction("Index", "Home");
-        }
-
-        [HttpGet]
-        public IActionResult AccessDenied()
-        {
-            TempData["ToastMessage"] = "Bạn không có quyền truy cập chức năng này.";
-            TempData["ToastType"] = "warning";
-            return View();
-        }
-
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            HttpContext.Session.Clear();
-
-            TempData["ToastMessage"] = "Đăng xuất thành công.";
-            TempData["ToastType"] = "info";
-
-            return RedirectToAction("Index", "Home");
         }
     }
 }

@@ -11,52 +11,124 @@
     </ol>
 </nav>
 
-<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-4">
     <div>
         <h2 class="page-title mb-1">Tạo bài viết mới</h2>
-        <div class="text-muted small">Chia sẻ kinh nghiệm, mẹo chăn nuôi hoặc câu hỏi của bạn.</div>
+        <div class="text-muted small">Chia sẻ kinh nghiệm, mẹo chăn nuôi hoặc câu hỏi của bạn với cộng đồng.</div>
     </div>
 </div>
 
-<div class="summary-card p-3 p-lg-4">
-    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+<div class="community-detail-page">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="community-sidebar-card mb-4">
+                <div class="community-sidebar-title">Gợi ý nội dung</div>
 
-    <form asp-action="Create" method="post">
-        @Html.AntiForgeryToken()
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        <div class="community-mini-post-placeholder">
+                            <i class="bi bi-lightbulb"></i>
+                        </div>
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">Kinh nghiệm thực tế</div>
+                        <div class="community-mini-post-meta">Chia sẻ những điều bạn đã áp dụng thành công.</div>
+                    </div>
+                </div>
 
-        <div class="form-floating mb-2">
-            <input asp-for="Title" class="form-control" placeholder="Tiêu đề" />
-            <label asp-for="Title">Tiêu đề</label>
-        </div>
-        <div class="mb-3">
-            <span asp-validation-for="Title" class="text-danger"></span>
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        <div class="community-mini-post-placeholder">
+                            <i class="bi bi-question-circle"></i>
+                        </div>
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">Đặt câu hỏi rõ ràng</div>
+                        <div class="community-mini-post-meta">Nêu rõ vấn đề để mọi người dễ hỗ trợ.</div>
+                    </div>
+                </div>
+
+                <div class="community-mini-post">
+                    <div class="community-mini-post-thumb">
+                        <div class="community-mini-post-placeholder">
+                            <i class="bi bi-image"></i>
+                        </div>
+                    </div>
+                    <div class="community-mini-post-body">
+                        <div class="community-mini-post-name">Thêm hình ảnh minh họa</div>
+                        <div class="community-mini-post-meta">Giúp bài viết trực quan và dễ hiểu hơn.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="community-sidebar-card">
+                <div class="community-sidebar-title">Lưu ý khi đăng bài</div>
+                <ul class="community-category-list">
+                    <li><a href="#">Viết tiêu đề ngắn gọn, rõ ý</a></li>
+                    <li><a href="#">Không đăng nội dung spam</a></li>
+                    <li><a href="#">Ưu tiên chia sẻ kinh nghiệm thật</a></li>
+                    <li><a href="#">Tôn trọng cộng đồng</a></li>
+                    <li><a href="#">Bài viết sẽ được duyệt trước khi hiển thị</a></li>
+                </ul>
+            </div>
         </div>
 
-        <div class="form-floating mb-2">
-            <textarea asp-for="Content" class="form-control" placeholder="Nội dung" style="height: 160px;"></textarea>
-            <label asp-for="Content">Nội dung</label>
-        </div>
-        <div class="mb-3">
-            <span asp-validation-for="Content" class="text-danger"></span>
-        </div>
+        <div class="col-lg-9">
+            <div class="community-article-card">
+                <div class="community-article-body">
+                    <div class="community-article-category">Tạo bài viết cộng đồng</div>
+                    <h1 class="community-article-title mb-3">Chia sẻ với cộng đồng Tevia Farm</h1>
 
-        <div class="form-floating mb-2">
-            <input asp-for="ImageUrl" class="form-control" placeholder="Đường dẫn hình ảnh" />
-            <label asp-for="ImageUrl">Đường dẫn hình ảnh (nếu có)</label>
-        </div>
-        <div class="mb-3">
-            <span asp-validation-for="ImageUrl" class="text-danger"></span>
-        </div>
+                    <div class="community-article-intro mb-4">
+                        Bạn có thể đăng kinh nghiệm chăn nuôi, cách phối trộn khẩu phần, câu hỏi kỹ thuật hoặc những ghi nhận thực tế trong quá trình sản xuất.
+                    </div>
 
-        <div class="d-flex flex-wrap gap-2">
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-send me-1"></i>Gửi bài
-            </button>
-            <a asp-action="Index" class="btn btn-outline-success">
-                <i class="bi bi-arrow-left me-1"></i>Quay lại
-            </a>
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold">Tiêu đề bài viết</label>
+                            <input asp-for="Title" class="form-control" placeholder="Ví dụ: Kinh nghiệm phối trộn bột trà xanh cho heo thịt" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label fw-semibold">Nội dung</label>
+                            <textarea asp-for="Content"
+                                      class="form-control"
+                                      rows="10"
+                                      placeholder="Hãy chia sẻ rõ bối cảnh, cách làm, kết quả đạt được hoặc câu hỏi bạn muốn được hỗ trợ..."></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ImageUrl" class="form-label fw-semibold">Đường dẫn hình ảnh (nếu có)</label>
+                            <input asp-for="ImageUrl" class="form-control" placeholder="https://... hoặc /images/..." />
+                            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-send me-1"></i>Gửi bài viết
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-success">
+                                <i class="bi bi-arrow-left me-1"></i>Quay lại cộng đồng
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="community-comment-card mt-4">
+                <div class="community-comment-title">Lưu ý duyệt bài</div>
+                <div class="community-comment-empty">
+                    Sau khi gửi, bài viết sẽ được quản trị viên xem xét trước khi hiển thị công khai trên khu vực cộng đồng.
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {

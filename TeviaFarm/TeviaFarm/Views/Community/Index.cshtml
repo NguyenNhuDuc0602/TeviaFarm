@@ -1,10 +1,10 @@
-@model IEnumerable<TeviaFarm.Models.Post>
+@model TeviaFarm.Models.CommunityReaderViewModel
+@using System.Security.Claims
+
 @{
     ViewData["Title"] = "Cộng đồng";
     var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
-
-    int currentPage = ViewBag.CurrentPage ?? 1;
-    int totalPages = ViewBag.TotalPages ?? 1;
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
     if (TempData["Message"] != null)
     {
@@ -13,18 +13,39 @@
     }
 }
 
+@functions {
+    public string GetCategoryLabel(string? title, string? content)
+    {
+        var text = $"{title} {content}".ToLower();
+
+        if (text.Contains("heo") || text.Contains("lợn") || text.Contains("chăn nuôi"))
+            return "Chăn nuôi";
+
+        if (text.Contains("trà xanh") || text.Contains("bột trà"))
+            return "Nông sản xanh";
+
+        if (text.Contains("khẩu phần") || text.Contains("phối trộn"))
+            return "Kỹ thuật";
+
+        return "Cộng đồng";
+    }
+}
+
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item">
+            <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        </li>
         <li class="breadcrumb-item active" aria-current="page">Cộng đồng</li>
     </ol>
 </nav>
 
-<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-4">
     <div>
         <h2 class="page-title mb-1">Bài viết cộng đồng</h2>
         <div class="text-muted small">Chia sẻ kinh nghiệm, hỏi đáp và cập nhật từ nông hộ.</div>
     </div>
+
     @if (isLoggedIn)
     {
         <a asp-action="Create" class="btn btn-success">
@@ -33,83 +54,214 @@
     }
 </div>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["Message"]
-    </div>
-}
+<div class="community-detail-page">
+    <div class="row g-4">
+        <div class="col-lg-4 col-xl-3">
+            <div class="community-sidebar-card mb-4">
+                <div class="community-sidebar-title">Bài viết mới nhất</div>
 
-@if (!Model.Any())
-{
-    <div class="card card-hover">
-        <div class="card-body p-4 p-lg-5 text-center">
-            <div class="display-6 mb-2"><i class="bi bi-chat-square-text text-success"></i></div>
-            <h3 class="h5 page-title mb-2">Chưa có bài viết nào</h3>
-            <p class="text-muted mb-0">Hãy là người đầu tiên chia sẻ kinh nghiệm chăn nuôi của bạn.</p>
-        </div>
-    </div>
-}
-else
-{
-    @foreach (var p in Model)
-    {
-        <div class="card mb-3 card-hover">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-start justify-content-between gap-2">
-                    <div>
-                        <h5 class="card-title mb-1">@p.Title</h5>
-                        <div class="text-muted small">
-                            <i class="bi bi-calendar3 me-1"></i>@p.CreatedDate.ToString("dd/MM/yyyy HH:mm")
-                            @if (p.User != null)
-                            {
-                                <span class="ms-2"><i class="bi bi-person-circle me-1"></i>@p.User.Username</span>
-                            }
+                @if (Model.LatestPosts != null && Model.LatestPosts.Any())
+                {
+                    @foreach (var item in Model.LatestPosts)
+                    {
+                        <div class="community-mini-post">
+                            <div class="community-mini-post-thumb">
+                                @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.Title" />
+                                }
+                                else
+                                {
+                                    <div class="community-mini-post-placeholder">
+                                        <i class="bi bi-image"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="community-mini-post-body">
+                                <a asp-action="Index" asp-route-id="@item.PostId" class="community-mini-post-link">
+                                    <div class="community-mini-post-name">@item.Title</div>
+                                </a>
+                                <div class="community-mini-post-meta">@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-success fs-4"><i class="bi bi-chat-dots"></i></div>
-                </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-muted small">Chưa có bài viết nào.</div>
+                }
+            </div>
 
-                <p class="card-text text-muted line-clamp-2 mt-3 mb-3">@p.Content</p>
-
-                <a asp-action="Details" asp-route-id="@p.PostId" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-eye me-1"></i>Xem chi tiết
-                </a>
+            <div class="community-sidebar-card">
+                <div class="community-sidebar-title">Danh mục blog</div>
+                <ul class="community-category-list">
+                    <li><a href="#">Chăn nuôi</a></li>
+                    <li><a href="#">Nông sản xanh</a></li>
+                    <li><a href="#">Kỹ thuật</a></li>
+                    <li><a href="#">Kinh nghiệm nông hộ</a></li>
+                    <li><a href="#">Cộng đồng</a></li>
+                    <li><a href="#">Tin tức hệ thống</a></li>
+                </ul>
             </div>
         </div>
-    }
 
-    @if (totalPages > 1)
-    {
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-page="@(currentPage - 1)">
-                        Trước
-                    </a>
-                </li>
+        <div class="col-lg-8 col-xl-9">
+            @if (Model.CurrentPost == null)
+            {
+                <div class="community-article-card">
+                    <div class="community-article-body text-center py-5">
+                        <div class="display-6 mb-3">
+                            <i class="bi bi-chat-square-text text-success"></i>
+                        </div>
+                        <h3 class="h5 page-title mb-2">Chưa có bài viết nào</h3>
+                        <p class="text-muted mb-0">Hãy là người đầu tiên chia sẻ kinh nghiệm chăn nuôi của bạn.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <article class="community-article-card">
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentPost.ImageUrl))
+                    {
+                        <div class="community-hero-image-wrap">
+                            <img src="@Model.CurrentPost.ImageUrl" class="community-hero-image" alt="@Model.CurrentPost.Title" />
+                        </div>
+                    }
 
-                @for (int i = 1; i <= totalPages; i++)
-                {
-                    <li class="page-item @(i == currentPage ? "active" : "")">
-                        <a class="page-link"
-                           asp-action="Index"
-                           asp-route-page="@i">
-                            @i
-                        </a>
-                    </li>
-                }
+                    <div class="community-article-body">
+                        <div class="community-article-category">
+                            @GetCategoryLabel(Model.CurrentPost.Title, Model.CurrentPost.Content)
+                        </div>
 
-                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-page="@(currentPage + 1)">
-                        Sau
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    }
-}
+                        <h1 class="community-article-title">@Model.CurrentPost.Title</h1>
+
+                        <div class="community-article-meta">
+                            <span>
+                                <i class="bi bi-person-circle me-1"></i>
+                                @(Model.CurrentPost.User?.Username ?? "Tác giả")
+                            </span>
+                            <span>
+                                <i class="bi bi-calendar3 me-1"></i>
+                                @Model.CurrentPost.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                            <span>
+                                <i class="bi bi-folder2-open me-1"></i>
+                                @GetCategoryLabel(Model.CurrentPost.Title, Model.CurrentPost.Content)
+                            </span>
+                        </div>
+
+                        <div class="community-article-content">
+                            @if (!string.IsNullOrWhiteSpace(Model.CurrentPost.Content))
+                            {
+                                @foreach (var paragraph in Model.CurrentPost.Content
+                                                        .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <p>@paragraph</p>
+                                }
+                            }
+                        </div>
+
+                        <div class="community-article-nav">
+                            <div class="d-flex flex-wrap gap-2 justify-content-between">
+                                <div>
+                                    @if (Model.PreviousPostId.HasValue)
+                                    {
+                                        <a asp-action="Index"
+                                           asp-route-id="@Model.PreviousPostId"
+                                           class="btn btn-outline-success rounded-pill px-4">
+                                            <i class="bi bi-arrow-left me-2"></i>Bài trước
+                                        </a>
+                                    }
+                                </div>
+
+                                <div>
+                                    @if (Model.NextPostId.HasValue)
+                                    {
+                                        <a asp-action="Index"
+                                           asp-route-id="@Model.NextPostId"
+                                           class="btn btn-success rounded-pill px-4">
+                                            Bài tiếp theo<i class="bi bi-arrow-right ms-2"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="community-comment-card mt-4">
+                    <div class="community-comment-title">Bình luận (@Model.Comments.Count)</div>
+
+                    @if (isLoggedIn)
+                    {
+                        <form asp-action="AddCommentFromReader" method="post" class="mb-4">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="postId" value="@Model.CurrentPost.PostId" />
+
+                            <div class="mb-3">
+                                <textarea name="content"
+                                  class="form-control"
+                                  rows="4"
+                                  placeholder="Nhập bình luận của bạn..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                <i class="bi bi-send me-2"></i>Gửi bình luận
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border mb-4">
+                            Vui lòng <a asp-controller="Account" asp-action="Login">đăng nhập</a> để bình luận.
+                        </div>
+                    }
+
+                    @if (Model.Comments != null && Model.Comments.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var comment in Model.Comments)
+                            {
+                                <div class="border rounded-4 p-3 bg-white">
+                                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                        <strong>@(comment.User?.Username ?? "Người dùng")</strong>
+                                        <span class="text-muted small">@comment.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+
+                                    <div class="mb-2">@comment.Content</div>
+
+                                    @{
+                                        var canDeleteComment =
+                                        isLoggedIn &&
+                                        (
+                                        comment.UserId.ToString() == currentUserId ||
+                                        User.IsInRole("Admin")
+                                        );
+                                    }
+
+                                    @if (canDeleteComment)
+                                    {
+                                        <form asp-action="DeleteComment" method="post" class="mt-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@comment.PostCommentId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                                <i class="bi bi-trash me-1"></i>Xóa bình luận
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="community-comment-empty">
+                            Chưa có bình luận nào cho bài viết này.
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
